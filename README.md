@@ -1,5 +1,18 @@
 # CacheDogeSim
 
+# Todo
+  
+  Pin Tool Tutorials (Basics)
+  
+  Brandon CacheSim
+  
+  Pin Tool Builtin Cache Tools
+  
+  Brandon Cachesim P2
+  
+  CacheDogeSim Implementation
+  
+
 # References
   [Pintool](https://software.intel.com/en-us/articles/pin-a-binary-instrumentation-tool-downloads)
 
