@@ -20,7 +20,7 @@
   
   [PinCRT](https://software.intel.com/sites/landingpage/pintool/docs/97619/PinCRT/html/)
 
-
+  [PARSEC](http://parsec.cs.princeton.edu/parsec3-doc.htm)
 # SPEC and Pintool
 ```
  # from https://software.intel.com/sites/landingpage/pintool/docs/97619/Pin/html/index.html#MEMORY

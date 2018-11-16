@@ -66,11 +66,12 @@ int main(int argc, char *argv[]){
 
   pthread_mutex_init(&lock,NULL);
 
-  pthread_t acc[4],upd;
+  pthread_t acc[5],upd;
   pthread_create(&acc[0],NULL,accessorThread,(void*)shrdPtr);
   pthread_create(&acc[1],NULL,accessorThread,(void*)shrdPtr);
   pthread_create(&acc[2],NULL,accessorThread,(void*)shrdPtr);
   pthread_create(&acc[3],NULL,accessorThread,(void*)shrdPtr);
+  pthread_create(&acc[4],NULL,accessorThread,(void*)shrdPtr);
   pthread_create(&upd,NULL,updaterThread,(void*)shrdPtr);
 
   pthread_join(upd,NULL);
@@ -78,5 +79,6 @@ int main(int argc, char *argv[]){
   pthread_join(acc[1],(void*)&res);
   pthread_join(acc[2],(void*)&res);
   pthread_join(acc[3],(void*)&res);
+  pthread_join(acc[4],(void*)&res);
   fprintf(stderr,"Final value of res was %d\n",res); 
 }
