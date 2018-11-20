@@ -1,61 +1,20 @@
-/*BEGIN_LEGAL 
-Intel Open Source License 
+/*
+ * Created on Mon Nov 19 2018
+ * Author: Artur Balanuta
+ * Copyright (c) 2018 Carnegie Mellon University
+ */
 
-Copyright (c) 2002-2018 Intel Corporation. All rights reserved.
- 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.  Redistributions
-in binary form must reproduce the above copyright notice, this list of
-conditions and the following disclaimer in the documentation and/or
-other materials provided with the distribution.  Neither the name of
-the Intel Corporation nor the names of its contributors may be used to
-endorse or promote products derived from this software without
-specific prior written permission.
- 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
-ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-END_LEGAL */
 /*! @file
  *  This file contains a configurable cache class
  */
 
-#ifndef PIN_CACHE_H
-#define PIN_CACHE_H
+#ifndef MYPIN_CACHE_H
+#define MYPIN_CACHE_H
 
+#include <string>
+#include <iostream>
 
-#define KILO 1024
-#define MEGA (KILO*KILO)
-#define GIGA (KILO*MEGA)
-
-typedef UINT64 CACHE_STATS; // type of cache hit/miss counters
-
-#include <sstream>
-
-/*! RMR (rodric@gmail.com) 
- *   - temporary work around because decstr()
- *     casts 64 bit ints to 32 bit ones
- */
-static string mydecstr(UINT64 v, UINT32 w)
-{
-    ostringstream o;
-    o.width(w);
-    o << v;
-    string str(o.str());
-    return str;
-}
+#include "pin_util.H"
 
 /*!
  *  @brief Checks if n is a power of 2.
@@ -133,6 +92,16 @@ class DIRECT_MAPPED
 
     UINT32 Find(CACHE_TAG tag) { return(_tag == tag); }
     VOID Replace(CACHE_TAG tag) { _tag = tag; }
+    VOID Flush() { _tag = 0; }
+    
+    // Deletes the specified TAG in the set
+    bool Delete(CACHE_TAG tag) {
+        if(_tag == tag){
+            _tag = 0;
+            return true;
+        }
+        return false;
+    }
 };
 
 /*!
@@ -166,7 +135,7 @@ class ROUND_ROBIN
         _nextReplaceIndex = _tagsLastIndex;
     }
     UINT32 GetAssociativity(UINT32 associativity) { return _tagsLastIndex + 1; }
-    
+
     UINT32 Find(CACHE_TAG tag)
     {
         bool result = true;
@@ -191,13 +160,36 @@ class ROUND_ROBIN
         // condition typically faster than modulo
         _nextReplaceIndex = (index == 0 ? _tagsLastIndex : index - 1);
     }
+
+    VOID Flush()
+    {
+      for (INT32 index = _tagsLastIndex; index >= 0; index--)
+      {
+	    _tags[index] = 0;
+      }
+      _nextReplaceIndex=_tagsLastIndex;
+    }
+
+    // Deletes the specified TAG in the set
+    bool Delete(CACHE_TAG tag)
+    {
+        for (INT32 index = _tagsLastIndex; index >= 0; index--)
+        {
+            if(_tags[index] == tag)
+            {
+                _tags[index] = 0;
+                return true;
+            }
+        }
+        return false;
+    }
 };
 
 } // namespace CACHE_SET
 
 namespace CACHE_ALLOC
 {
-    typedef enum 
+    typedef enum
     {
         STORE_ALLOCATE,
         STORE_NO_ALLOCATE
@@ -211,29 +203,26 @@ class CACHE_BASE
 {
   public:
     // types, constants
-    typedef enum 
+    typedef enum
     {
         ACCESS_TYPE_LOAD,
         ACCESS_TYPE_STORE,
         ACCESS_TYPE_NUM
     } ACCESS_TYPE;
 
-    typedef enum
-    {
-        CACHE_TYPE_ICACHE,
-        CACHE_TYPE_DCACHE,
-        CACHE_TYPE_NUM
-    } CACHE_TYPE;
-
   protected:
     static const UINT32 HIT_MISS_NUM = 2;
     CACHE_STATS _access[ACCESS_TYPE_NUM][HIT_MISS_NUM];
-
-  private:    // input params
     const std::string _name;
+
+  private:
+    // input params
     const UINT32 _cacheSize;
     const UINT32 _lineSize;
     const UINT32 _associativity;
+    UINT32 _numberOfFlushes;
+    UINT32 _numberOfResets;
+    UINT32 _numberOfEvictions;
 
     // computed params
     const UINT32 _lineShift;
@@ -270,6 +259,10 @@ class CACHE_BASE
     CACHE_STATS Misses() const { return SumAccess(false);}
     CACHE_STATS Accesses() const { return Hits() + Misses();}
 
+    CACHE_STATS Flushes() const { return _numberOfFlushes;}
+    CACHE_STATS Evictions() const { return _numberOfEvictions;}
+    CACHE_STATS Resets() const { return _numberOfResets;}
+
     VOID SplitAddress(const ADDRINT addr, CACHE_TAG & tag, UINT32 & setIndex) const
     {
         tag = addr >> _lineShift;
@@ -283,7 +276,22 @@ class CACHE_BASE
         SplitAddress(addr, tag, setIndex);
     }
 
-    string StatsLong(string prefix = "", CACHE_TYPE = CACHE_TYPE_DCACHE) const;
+    VOID IncFlushCounter()
+    {
+	_numberOfFlushes += 1;
+    }
+
+    VOID IncEvictionsCounter()
+    {
+	_numberOfEvictions += 1;
+    }
+
+    VOID IncResetCounter()
+    {
+	_numberOfResets += 1;
+    }
+
+    std::ostream & StatsLong(std::ostream & out) const;
 };
 
 CACHE_BASE::CACHE_BASE(std::string name, UINT32 cacheSize, UINT32 lineSize, UINT32 associativity)
@@ -308,55 +316,46 @@ CACHE_BASE::CACHE_BASE(std::string name, UINT32 cacheSize, UINT32 lineSize, UINT
 /*!
  *  @brief Stats output method
  */
-
-string CACHE_BASE::StatsLong(string prefix, CACHE_TYPE cache_type) const
+std::ostream & CACHE_BASE::StatsLong(std::ostream & out) const
 {
     const UINT32 headerWidth = 19;
-    const UINT32 numberWidth = 12;
-
-    string out;
+    const UINT32 numberWidth = 10;
     
-    out += prefix + _name + ":" + "\n";
+    out << std::endl;
+    out << _name << ":" << std::endl;
 
-    if (cache_type != CACHE_TYPE_ICACHE) {
-       for (UINT32 i = 0; i < ACCESS_TYPE_NUM; i++)
-       {
-           const ACCESS_TYPE accessType = ACCESS_TYPE(i);
 
-           std::string type(accessType == ACCESS_TYPE_LOAD ? "Load" : "Store");
+    // Access Types, LOAD, STORE
+    for (UINT32 i = 0; i < ACCESS_TYPE_NUM; i++)
+    {
+        const ACCESS_TYPE accessType = ACCESS_TYPE(i);
 
-           out += prefix + ljstr(type + "-Hits:      ", headerWidth)
-                  + mydecstr(Hits(accessType), numberWidth)  +
-                  "  " +fltstr(100.0 * Hits(accessType) / Accesses(accessType), 2, 6) + "%\n";
+        std::string type(accessType == ACCESS_TYPE_LOAD ? "Load " : "Store");
 
-           out += prefix + ljstr(type + "-Misses:    ", headerWidth)
-                  + mydecstr(Misses(accessType), numberWidth) +
-                  "  " +fltstr(100.0 * Misses(accessType) / Accesses(accessType), 2, 6) + "%\n";
-        
-           out += prefix + ljstr(type + "-Accesses:  ", headerWidth)
-                  + mydecstr(Accesses(accessType), numberWidth) +
-                  "  " +fltstr(100.0 * Accesses(accessType) / Accesses(accessType), 2, 6) + "%\n";
-        
-           out += prefix + "\n";
-       }
+        out << StringString(type + " Hits:      ", headerWidth) << StringInt(Hits(accessType), numberWidth) << std::endl;
+        out << StringString(type + " Misses:    ", headerWidth) << StringInt(Misses(accessType), numberWidth) << std::endl;
+        out << StringString(type + " Accesses:  ", headerWidth) << StringInt(Accesses(accessType), numberWidth) << std::endl;
+        out << StringString(type + " Miss Rate: ", headerWidth) << StringFlt(100.0 * Misses(accessType) / Accesses(accessType), 2, numberWidth-1) << "%" << std::endl;
+        out << std::endl;
     }
 
-    out += prefix + ljstr("Total-Hits:      ", headerWidth)
-           + mydecstr(Hits(), numberWidth) +
-           "  " +fltstr(100.0 * Hits() / Accesses(), 2, 6) + "%\n";
-
-    out += prefix + ljstr("Total-Misses:    ", headerWidth)
-           + mydecstr(Misses(), numberWidth) +
-           "  " +fltstr(100.0 * Misses() / Accesses(), 2, 6) + "%\n";
-
-    out += prefix + ljstr("Total-Accesses:  ", headerWidth)
-           + mydecstr(Accesses(), numberWidth) +
-           "  " +fltstr(100.0 * Accesses() / Accesses(), 2, 6) + "%\n";
-    out += "\n";
+    out << StringString("Total Hits:      ", headerWidth, ' ') << StringInt(Hits(),     numberWidth) << std::endl;
+    out << StringString("Total Misses:    ", headerWidth, ' ') << StringInt(Misses(),   numberWidth) << std::endl;
+    // out << StringString("Total Accesses:  ", headerWidth, ' ') << StringInt(Accesses(), numberWidth) << std::endl;
+    // out << StringString("Total Miss Rate: ", headerWidth, ' ') << StringFlt(100.0 * Misses() / Accesses(), 2, numberWidth-1) << "%" << std::endl;
+    out << StringString("Evictions:       ", headerWidth, ' ') << StringInt(Evictions(), numberWidth) << std::endl;
+    out << StringString("Flushes:         ", headerWidth, ' ') << StringInt(Flushes(), numberWidth) << std::endl;
+    out << StringString("Stat Resets:     ", headerWidth, ' ') << StringInt(Resets(), numberWidth) << std::endl;
+    out << std::endl;
 
     return out;
 }
 
+/// ostream operator for CACHE_BASE
+std::ostream & operator<< (std::ostream & out, const CACHE_BASE & cacheBase)
+{
+    return cacheBase.StatsLong(out);
+}
 
 /*!
  *  @brief Templated cache class with specific cache set allocation policies
@@ -388,12 +387,19 @@ class CACHE : public CACHE_BASE
     bool Access(ADDRINT addr, UINT32 size, ACCESS_TYPE accessType);
     /// Cache access at addr that does not span cache lines
     bool AccessSingleLine(ADDRINT addr, ACCESS_TYPE accessType);
+    void Flush();
+
+    /// Evicts the Cache from addr to addr+size-1
+    UINT32 Evict(ADDRINT addr, UINT32 size);
+    /// Evicts a Cache addr that does not span cache lines
+    bool EvictSingleLine(ADDRINT addr);
+    
+    void ResetStats();
 };
 
 /*!
  *  @return true if all accessed cache lines hit
  */
-
 template <class SET, UINT32 MAX_SETS, UINT32 STORE_ALLOCATION>
 bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::Access(ADDRINT addr, UINT32 size, ACCESS_TYPE accessType)
 {
@@ -424,6 +430,8 @@ bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::Access(ADDRINT addr, UINT32 size, ACC
     }
     while (addr < highAddr);
 
+    //std::cout << _name << " Addr " << StringHex(addr, 0) << " - " << StringHex(highAddr, 0) << " Hit " << allHit << std::endl;
+
     _access[accessType][allHit]++;
 
     return allHit;
@@ -450,13 +458,93 @@ bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::AccessSingleLine(ADDRINT addr, ACCESS
         set.Replace(tag);
     }
 
+    //std::cout << _name << " Addr " << StringHex(addr, 0) << " - " << StringHex(addr, 0) << " Hit " << hit << std::endl;
+
     _access[accessType][hit]++;
 
     return hit;
 }
 
+
+
+
+template <class SET, UINT32 MAX_SETS, UINT32 STORE_ALLOCATION>
+UINT32 CACHE<SET,MAX_SETS,STORE_ALLOCATION>::Evict(ADDRINT addr, UINT32 size)
+{
+    const ADDRINT highAddr = addr + size;
+    UINT32 evicted = 0;
+
+    const ADDRINT lineSize = LineSize();
+    const ADDRINT notLineMask = ~(lineSize - 1);
+    do
+    {
+        CACHE_TAG tag;
+        UINT32 setIndex;
+
+        SplitAddress(addr, tag, setIndex);
+
+        SET & set = _sets[setIndex];
+
+        if ( set.Delete(tag) ){
+            evicted++;
+        }
+
+        addr = (addr & notLineMask) + lineSize; // start of next cache line
+    }
+    while (addr < highAddr);
+
+    if (evicted) IncEvictionsCounter();
+
+    return evicted;
+}
+
+template <class SET, UINT32 MAX_SETS, UINT32 STORE_ALLOCATION>
+bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::EvictSingleLine(ADDRINT addr)
+{
+    CACHE_TAG tag;
+    UINT32 setIndex;
+
+    SplitAddress(addr, tag, setIndex);
+
+    // Get the set where the address coresponds to
+    SET & set = _sets[setIndex];
+
+    bool deleted = set.Delete(tag);
+
+    //std::cout << _name << "Evicting Addr " << StringHex(addr, 0) << " - " << StringHex(addr, 0) << " Evicted " <<  deleted << std::endl;
+
+    if (deleted) IncEvictionsCounter();
+
+    return deleted;
+}
+
+
+
+
+template <class SET, UINT32 MAX_SETS, UINT32 STORE_ALLOCATION>
+void CACHE<SET,MAX_SETS,STORE_ALLOCATION>::Flush()
+{
+    for (INT32 index = NumSets(); index >= 0; index--) {
+      SET & set = _sets[index];
+      set.Flush();
+    }
+    IncFlushCounter();
+}
+
+template <class SET, UINT32 MAX_SETS, UINT32 STORE_ALLOCATION>
+void CACHE<SET,MAX_SETS,STORE_ALLOCATION>::ResetStats()
+{
+    for (UINT32 accessType = 0; accessType < ACCESS_TYPE_NUM; accessType++)
+    {
+	_access[accessType][false] = 0;
+	_access[accessType][true] = 0;
+    }
+    IncResetCounter();
+}
+
+
 // define shortcuts
 #define CACHE_DIRECT_MAPPED(MAX_SETS, ALLOCATION) CACHE<CACHE_SET::DIRECT_MAPPED, MAX_SETS, ALLOCATION>
 #define CACHE_ROUND_ROBIN(MAX_SETS, MAX_ASSOCIATIVITY, ALLOCATION) CACHE<CACHE_SET::ROUND_ROBIN<MAX_ASSOCIATIVITY>, MAX_SETS, ALLOCATION>
 
-#endif // PIN_CACHE_H
+#endif // MYPIN_CACHE_H

@@ -1,3 +1,10 @@
+/*
+ * Created on Mon Nov 19 2018
+ * Author: Artur Balanuta
+ * Copyright (c) 2018 Carnegie Mellon University
+ */
+
+
 /*! @file
  *  This file contains an ISA-portable PIN tool for functional simulation of
  *  instruction+data TLB+cache hierarchies
@@ -9,12 +16,26 @@
 
 typedef UINT32 CACHE_STATS; // type of cache hit/miss counters
 
-#include "pin_cache.H"
+#include "mypin_cache.H"
 
-namespace ITLB
+
+
+// CPU Intel i7-7700K (Skylake) @4Ghz Characteristics (https://www.7-cpu.com/cpu/Skylake.html)
+// .25 ns/cycle
+
+#define L1_DATA_CACHE_LATENCY_NS    1.25 // ns
+
+#define L2_CACHE_LATENCY_NS         3.0 // ns
+#define L3_CACHE_LATENCY_NS         9.5 // ns
+#define RAM_LATENCY_NS              51 // ns
+
+
+
+
+namespace ITLR
 {
-    // instruction TLB: 4 kB pages, 32 entries, fully associative
-    const UINT32 lineSize = 4*KILO;
+    // instruction Top Level registers: 4 kB pages, 32 entries, fully associative
+    const UINT32 lineSize = 1*KILO;
     const UINT32 cacheSize = 32 * lineSize;
     const UINT32 associativity = 32;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_ALLOCATE;
@@ -25,10 +46,10 @@ namespace ITLB
     typedef CACHE_ROUND_ROBIN(max_sets, max_associativity, allocation) CACHE;
 }
 
-namespace DTLB
+namespace DTLR
 {
-    // data TLB: 4 kB pages, 32 entries, fully associative
-    const UINT32 lineSize = 4*KILO;
+    // data Top level registers: 4 kB pages, 32 entries, fully associative
+    const UINT32 lineSize = 1*KILO;
     const UINT32 cacheSize = 32 * lineSize;
     const UINT32 associativity = 32;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_ALLOCATE;
@@ -70,7 +91,7 @@ namespace DL1
 namespace UL2
 {
     // 2nd level unified cache: 2 MB, 64 B lines, direct mapped
-    const UINT32 cacheSize = 2*MEGA;
+    const UINT32 cacheSize = 256*KILO;
     const UINT32 lineSize = 64;
     const UINT32 associativity = 1;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_ALLOCATE;
@@ -82,8 +103,8 @@ namespace UL2
 
 namespace UL3
 {
-    // 3rd level unified cache: 16 MB, 64 B lines, direct mapped
-    const UINT32 cacheSize = 64*MEGA;
+    // 3rd level unified cache: 2 MB, 64 B lines, direct mapped
+    const UINT32 cacheSize = 2*MEGA;
     const UINT32 lineSize = 64;
     const UINT32 associativity = 1;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_ALLOCATE;
@@ -93,18 +114,12 @@ namespace UL3
     typedef CACHE_DIRECT_MAPPED(max_sets, allocation) CACHE;
 }
 
-LOCALFUN ITLB::CACHE itlb("ITLB", ITLB::cacheSize, ITLB::lineSize, ITLB::associativity);
-LOCALVAR DTLB::CACHE dtlb("DTLB", DTLB::cacheSize, DTLB::lineSize, DTLB::associativity);
-
-LOCALVAR IL1::CACHE il1("L1 Instruction Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity);
-LOCALVAR DL1::CACHE dl1("L1 Data Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity);
-
-LOCALVAR UL2::CACHE ul2_01("L2 Core 0-1 Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity);
-LOCALVAR UL2::CACHE ul2_23("L2 Core 2-3 Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity);
-
-LOCALVAR UL3::CACHE ul3("L3 Unified Cache", UL3::cacheSize, UL3::lineSize, UL3::associativity);
-
-
+// LOCALFUN ITLR::CACHE itlr("Inst Reg ", ITLR::cacheSize, ITLR::lineSize, ITLR::associativity);
+// LOCALVAR DTLR::CACHE dtlr("Data Reg ", DTLR::cacheSize, DTLR::lineSize, DTLR::associativity);
+LOCALVAR IL1::CACHE  il1( "L1I Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity);
+LOCALVAR DL1::CACHE  dl1( "L1D Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity);
+LOCALVAR UL2::CACHE  ul2( "L2U Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity);
+LOCALVAR UL3::CACHE  ul3( "L3U Cache", UL3::cacheSize, UL3::lineSize, UL3::associativity);
 
 LOCALFUN VOID Ul2Access(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE accessType)
 {
@@ -115,13 +130,15 @@ LOCALFUN VOID Ul2Access(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE acces
     if ( ! ul2Hit) ul3.Access(addr, size, accessType);
 }
 
+
+
 LOCALFUN VOID InsRef(ADDRINT addr)
 {
     const UINT32 size = 1; // assuming access does not cross cache lines
     const CACHE_BASE::ACCESS_TYPE accessType = CACHE_BASE::ACCESS_TYPE_LOAD;
 
-    // ITLB
-    itlb.AccessSingleLine(addr, accessType);
+    // ITLR
+    //itlr.AccessSingleLine(addr, accessType);
 
     // first level I-cache
     const BOOL il1Hit = il1.AccessSingleLine(addr, accessType);
@@ -133,7 +150,7 @@ LOCALFUN VOID InsRef(ADDRINT addr)
 LOCALFUN VOID MemRefMulti(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE accessType)
 {
     // DTLB
-    dtlb.AccessSingleLine(addr, CACHE_BASE::ACCESS_TYPE_LOAD);
+    //dtlr.AccessSingleLine(addr, CACHE_BASE::ACCESS_TYPE_LOAD);
 
     // first level D-cache
     const BOOL dl1Hit = dl1.Access(addr, size, accessType);
@@ -145,11 +162,11 @@ LOCALFUN VOID MemRefMulti(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE acc
 LOCALFUN VOID MemRefSingle(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE accessType)
 {
     // DTLB
-    dtlb.AccessSingleLine(addr, CACHE_BASE::ACCESS_TYPE_LOAD);
+    //dtlr.AccessSingleLine(addr, CACHE_BASE::ACCESS_TYPE_LOAD);
 
     // first level D-cache
     const BOOL dl1Hit = dl1.AccessSingleLine(addr, accessType);
-
+    
     // second level unified Cache
     if ( ! dl1Hit) Ul2Access(addr, size, accessType);
 }
@@ -192,21 +209,20 @@ LOCALFUN VOID Instruction(INS ins, VOID *v)
 }
 
 LOCALFUN VOID Fini(int code, VOID * v)
-{
-    //std::cerr << itlb;
-    //std::cerr << dtlb;
-    //std::cerr << il1;
-    
+{   
+    std::cerr << il1;
     std::cerr << dl1;
-    
+
     std::cerr << ul2;
-    
     std::cerr << ul3;
 }
 
 GLOBALFUN int main(int argc, char *argv[])
 {
     PIN_Init(argc, argv);
+
+
+    
 
     INS_AddInstrumentFunction(Instruction, 0);
     PIN_AddFiniFunction(Fini, 0);

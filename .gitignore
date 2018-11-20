@@ -32,4 +32,9 @@
 *.app
 .DS_Store
 
+src/cacheDogeSimTool/logs/
 src/myPinTool/logs/
+src/MultiCache
+src/MultiCacheSim
+src/PinTools
+.vscode/c_cpp_properties.json
