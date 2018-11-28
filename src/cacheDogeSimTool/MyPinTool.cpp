@@ -47,6 +47,36 @@ THREADID getVirtualId(THREADID thread_id)
     return (thread_id % 4);
 }
 
+// received the virtual id of the thread that is trying to write
+void tryEvictL1(ADDRINT addr, UINT32 size, VIRTUALID vid){
+
+    //std::cout << "tryEvictL1 " << vid << endl;
+
+    for (uint i = 0; i < 4; i++ ){
+        if (i != vid)
+        {
+            cache.getDL1(i)->Evict(addr, size);
+            //std::cout << "EvictL1 " << i << endl;
+        }
+    }
+
+}
+
+// received the virtual id of the thread that is trying to write
+void tryEvictL2(ADDRINT addr, UINT32 size, VIRTUALID vid){
+    
+    //std::cout << "tryEvictL2 " << vid << endl;
+    for (uint i = 0; i < 2; i++ ){
+        if (i != vid/2)
+        {
+            cache.getUL2(i*2)->Evict(addr, size);
+            //std::cout << "EvictL2 " << i*2 << endl;
+        }
+    }
+
+}
+
+
 // Accessing Instructions Read Only
 LOCALFUN VOID InsRef(ADDRINT addr, THREADID tid)
 {
@@ -70,6 +100,8 @@ LOCALFUN VOID MemRefMulti(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE acc
     // const BOOL dl1Hit = dl1.Access(addr, size, accessType);
     const BOOL dl1Hit = cache.getDL1(vid)->Access(addr, size, accessType);
 
+    if (!dl1Hit) tryEvictL1(addr, size, vid);
+
     //TODO IF WRITE, Evict CACHES !?
     // TODO IF ITS A HIT ignore EVICTION
 
@@ -86,6 +118,8 @@ LOCALFUN VOID MemRefSingle(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE ac
     // first level D-cache
     //const BOOL dl1Hit = dl1.AccessSingleLine(addr, accessType);
     const BOOL dl1Hit = cache.getDL1(vid)->AccessSingleLine(addr, accessType);
+
+    if (!dl1Hit) tryEvictL1(addr, size, vid);
     
     //TODO IF WRITE, Evict CACHES !?
     // TODO IF ITS A HIT ignore EVICTION
@@ -101,9 +135,13 @@ LOCALFUN VOID Ul2Access(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE acces
     // const BOOL ul2Hit = ul2.Access(addr, size, accessType);
     const BOOL ul2Hit = cache.getUL2(vid)->Access(addr, size, accessType);
 
+    if (!ul2Hit) tryEvictL2(addr, size, vid);
+
     // // third level unified cache
     // if ( ! ul2Hit) ul3.Access(addr, size, accessType);
     if ( ! ul2Hit) cache.getUL3(vid)->Access(addr, size, accessType);
+
+    //TODO Account fort magic RAM acces
 }
 
 
@@ -157,20 +195,20 @@ LOCALFUN VOID Instruction(INS ins, VOID *v)
 
 LOCALFUN VOID Fini(int code, VOID * v)
 {   
-    std::cerr << *cache.getIL1(0) << endl;
-    std::cerr << *cache.getIL1(1) << endl;
-    std::cerr << *cache.getIL1(2) << endl;
-    std::cerr << *cache.getIL1(3) << endl;
+    // std::cerr << *cache.getIL1(0);
+    // std::cerr << *cache.getIL1(1);
+    // std::cerr << *cache.getIL1(2);
+    // std::cerr << *cache.getIL1(3);
 
-    std::cerr << *cache.getDL1(0) << endl;
-    std::cerr << *cache.getDL1(1) << endl;
-    std::cerr << *cache.getDL1(2) << endl;
-    std::cerr << *cache.getDL1(3) << endl;
+    std::cerr << *cache.getDL1(0);
+    std::cerr << *cache.getDL1(1);
+    std::cerr << *cache.getDL1(2);
+    std::cerr << *cache.getDL1(3);
     
-    std::cerr << *cache.getUL2(0) << endl;
-    std::cerr << *cache.getUL2(2) << endl;
+    std::cerr << *cache.getUL2(0);
+    std::cerr << *cache.getUL2(2);
 
-    std::cerr << *cache.getUL3(0) << endl;
+    std::cerr << *cache.getUL3(0);
 }
 
 GLOBALFUN int main(int argc, char *argv[])

@@ -321,31 +321,33 @@ std::ostream & CACHE_BASE::StatsLong(std::ostream & out) const
     const UINT32 headerWidth = 19;
     const UINT32 numberWidth = 10;
     
-    out << std::endl;
     out << _name << ":" << std::endl;
 
 
     // Access Types, LOAD, STORE
-    for (UINT32 i = 0; i < ACCESS_TYPE_NUM; i++)
-    {
-        const ACCESS_TYPE accessType = ACCESS_TYPE(i);
+    // for (UINT32 i = 0; i < ACCESS_TYPE_NUM; i++)
+    // {
+    //     const ACCESS_TYPE accessType = ACCESS_TYPE(i);
 
-        std::string type(accessType == ACCESS_TYPE_LOAD ? "Load " : "Store");
+    //     //ignore Instruction caches
+    //     if (accessType == ACCESS_TYPE_STORE && Accesses(accessType) == 0) continue;
 
-        out << StringString(type + " Hits:      ", headerWidth) << StringInt(Hits(accessType), numberWidth) << std::endl;
-        out << StringString(type + " Misses:    ", headerWidth) << StringInt(Misses(accessType), numberWidth) << std::endl;
-        out << StringString(type + " Accesses:  ", headerWidth) << StringInt(Accesses(accessType), numberWidth) << std::endl;
-        out << StringString(type + " Miss Rate: ", headerWidth) << StringFlt(100.0 * Misses(accessType) / Accesses(accessType), 2, numberWidth-1) << "%" << std::endl;
-        out << std::endl;
-    }
+    //     std::string type(accessType == ACCESS_TYPE_LOAD ? "Load " : "Store");
 
-    out << StringString("Total Hits:      ", headerWidth, ' ') << StringInt(Hits(),     numberWidth) << std::endl;
-    out << StringString("Total Misses:    ", headerWidth, ' ') << StringInt(Misses(),   numberWidth) << std::endl;
+    //     out << StringString(type + " Hits:      ", headerWidth) << StringInt(Hits(accessType), numberWidth) << std::endl;
+    //     out << StringString(type + " Misses:    ", headerWidth) << StringInt(Misses(accessType), numberWidth) << std::endl;
+    //     out << StringString(type + " Accesses:  ", headerWidth) << StringInt(Accesses(accessType), numberWidth) << std::endl;
+    //     out << StringString(type + " Miss Rate: ", headerWidth) << StringFlt(100.0 * Misses(accessType) / Accesses(accessType), 2, numberWidth-1) << "%" << std::endl;
+    //     out << std::endl;
+    // }
+
+    //out << StringString("Total Hits:      ", headerWidth, ' ') << StringInt(Hits(),     numberWidth) << std::endl;
+    //out << StringString("Total Misses:    ", headerWidth, ' ') << StringInt(Misses(),   numberWidth) << std::endl;
     // out << StringString("Total Accesses:  ", headerWidth, ' ') << StringInt(Accesses(), numberWidth) << std::endl;
     // out << StringString("Total Miss Rate: ", headerWidth, ' ') << StringFlt(100.0 * Misses() / Accesses(), 2, numberWidth-1) << "%" << std::endl;
     out << StringString("Evictions:       ", headerWidth, ' ') << StringInt(Evictions(), numberWidth) << std::endl;
-    out << StringString("Flushes:         ", headerWidth, ' ') << StringInt(Flushes(), numberWidth) << std::endl;
-    out << StringString("Stat Resets:     ", headerWidth, ' ') << StringInt(Resets(), numberWidth) << std::endl;
+    //out << StringString("Flushes:         ", headerWidth, ' ') << StringInt(Flushes(), numberWidth) << std::endl;
+    //out << StringString("Stat Resets:     ", headerWidth, ' ') << StringInt(Resets(), numberWidth) << std::endl;
     out << std::endl;
 
     return out;
