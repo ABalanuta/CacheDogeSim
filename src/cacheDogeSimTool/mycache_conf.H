@@ -6,11 +6,10 @@ typedef THREADID VIRTUALID;
 // CPU Intel i7-7700K (Skylake) @4Ghz Characteristics (https://www.7-cpu.com/cpu/Skylake.html)
 // .25 ns/cycle
 
-#define L1_DATA_CACHE_LATENCY_NS    1.25 // ns
-
-#define L2_CACHE_LATENCY_NS         3.0 // ns
-#define L3_CACHE_LATENCY_NS         9.5 // ns
-#define RAM_LATENCY_NS              51 // ns
+#define L1_CACHE_LATENCY         5
+#define L2_CACHE_LATENCY         12
+#define L3_CACHE_LATENCY         47
+#define RAM_LATENCY              204
 
 //Defines Cache Configurations
 namespace ITLR
@@ -123,7 +122,8 @@ class MyCache
         };
 
         // Level 3 Unified Cache
-        UL3::CACHE* ul3 = new UL3::CACHE("L3 Unified Cache", UL3::cacheSize, UL3::lineSize, UL3::associativity);
+        UL3::CACHE* ul3 = new UL3::CACHE("L3 Unified Cache", UL3::cacheSize, \
+            UL3::lineSize, UL3::associativity);
     
     public:
 

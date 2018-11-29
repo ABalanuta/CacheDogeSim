@@ -11,6 +11,7 @@
  */
 
 #include <iostream>
+#include <sstream>
 
 #include "pin.H"
 
@@ -24,13 +25,16 @@ typedef UINT32 CACHE_STATS; // type of cache hit/miss counters
 
 
 // Other Vars
-UINT32 threads[4];
 MyCache cache;
+uint64_t exec_time[4];
+uint64_t exec_inst_access[4];
+uint64_t exec_data_access[4];
 
 LOCALFUN VOID InsRef(ADDRINT addr, THREADID tid);
 LOCALFUN VOID MemRefMulti(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE accessType, THREADID tid);
 LOCALFUN VOID MemRefSingle(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE accessType, THREADID tid);
 LOCALFUN VOID Ul2Access(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE accessType, VIRTUALID vid);
+LOCALFUN VOID Ul3Access(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE accessType, VIRTUALID vid);
 LOCALFUN VOID Instruction(INS ins, VOID *v);
 LOCALFUN VOID Fini(int code, VOID * v);
 THREADID getVirtualId(THREADID thread_id);
@@ -83,8 +87,12 @@ LOCALFUN VOID InsRef(ADDRINT addr, THREADID tid)
     const UINT32 size = 1; // assuming access does not cross cache lines
     const CACHE_BASE::ACCESS_TYPE accessType = CACHE_BASE::ACCESS_TYPE_LOAD;
     THREADID vid = getVirtualId(tid);
+    
+    // Update Counters
+    exec_inst_access[vid]++;
+    exec_time[vid] += L1_CACHE_LATENCY; // Adds L1 cache latency
+    // TODO Add size dependent latency
 
-    //const BOOL il1Hit = il1.AccessSingleLine(addr, accessType);
     const BOOL il1Hit = cache.getIL1(vid)->AccessSingleLine(addr, accessType);
 
     // second level unified Cache
@@ -96,18 +104,19 @@ LOCALFUN VOID MemRefMulti(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE acc
 {
     THREADID vid = getVirtualId(tid);
     
+    // Update Counters
+    exec_data_access[vid]++;
+    exec_time[vid] += L1_CACHE_LATENCY; // Adds L1 cache latency
+    // TODO Add size dependent latency
+
     // first level D-cache
-    // const BOOL dl1Hit = dl1.Access(addr, size, accessType);
     const BOOL dl1Hit = cache.getDL1(vid)->Access(addr, size, accessType);
 
-    if (!dl1Hit) tryEvictL1(addr, size, vid);
-
-    //TODO IF WRITE, Evict CACHES !?
-    // TODO IF ITS A HIT ignore EVICTION
-
-
-    // second level unified Cache
-    if ( ! dl1Hit) Ul2Access(addr, size, accessType, vid);
+    if ( !dl1Hit ){
+        tryEvictL1(addr, size, vid);
+        // second level unified Cache
+        Ul2Access(addr, size, accessType, vid);
+    }
 }
 
 // Accessing L1 Data Caches Read or Write
@@ -115,33 +124,53 @@ LOCALFUN VOID MemRefSingle(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE ac
 {
     THREADID vid = getVirtualId(tid);
 
+    // Update Counters
+    exec_data_access[vid]++;
+    exec_time[vid] += L1_CACHE_LATENCY; // Adds L1 cache latency
+    // TODO Add size dependent latency
+
     // first level D-cache
-    //const BOOL dl1Hit = dl1.AccessSingleLine(addr, accessType);
     const BOOL dl1Hit = cache.getDL1(vid)->AccessSingleLine(addr, accessType);
 
-    if (!dl1Hit) tryEvictL1(addr, size, vid);
-    
-    //TODO IF WRITE, Evict CACHES !?
-    // TODO IF ITS A HIT ignore EVICTION
-
-    // second level unified Cache
-    if ( ! dl1Hit) Ul2Access(addr, size, accessType, vid);   
+    if ( !dl1Hit ){
+        tryEvictL1(addr, size, vid);
+        // second level unified Cache
+        Ul2Access(addr, size, accessType, vid);
+    }
 }
 
 // Accessing L2/L3 Data Caches Read or Write
 LOCALFUN VOID Ul2Access(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE accessType, VIRTUALID vid)
 {
+    
+    // Update Counters
+    exec_time[vid] += L2_CACHE_LATENCY; // Adds L2 cache latency
+
     // second level cache
     // const BOOL ul2Hit = ul2.Access(addr, size, accessType);
     const BOOL ul2Hit = cache.getUL2(vid)->Access(addr, size, accessType);
 
-    if (!ul2Hit) tryEvictL2(addr, size, vid);
+    if ( !ul2Hit ) {
+        tryEvictL2(addr, size, vid);
 
-    // // third level unified cache
-    // if ( ! ul2Hit) ul3.Access(addr, size, accessType);
-    if ( ! ul2Hit) cache.getUL3(vid)->Access(addr, size, accessType);
+        // third level unified cache
+        Ul3Access(addr, size, accessType, vid);
+    }
+}
 
-    //TODO Account fort magic RAM acces
+// Accessing L2/L3 Data Caches Read or Write
+LOCALFUN VOID Ul3Access(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE accessType, VIRTUALID vid)
+{
+    // Update Counters
+    exec_time[vid] += L3_CACHE_LATENCY; // Adds L1 cache latency
+
+    // third level cache
+    const BOOL ul3Hit = cache.getUL3(vid)->Access(addr, size, accessType);
+
+    if ( !ul3Hit ) {
+        // Update Counters
+        exec_time[vid] += RAM_LATENCY; // Adds RAM cache latency
+    }
 }
 
 
@@ -193,6 +222,22 @@ LOCALFUN VOID Instruction(INS ins, VOID *v)
     }
 }
 
+
+string humanize(uint64_t var){
+    static const char sz[] = {' ', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'};
+    int index = 0;
+    std::ostringstream out;
+
+    while(var > 1000){
+        var /= 1000;
+        index++;
+    }
+    
+    out << var << sz[index];
+
+    return out.str();
+}
+
 LOCALFUN VOID Fini(int code, VOID * v)
 {   
     // std::cerr << *cache.getIL1(0);
@@ -209,6 +254,33 @@ LOCALFUN VOID Fini(int code, VOID * v)
     std::cerr << *cache.getUL2(2);
 
     std::cerr << *cache.getUL3(0);
+
+    uint64_t total_delay = 0;
+    
+    for(int i = 0; i < 4; i++ ){
+
+        total_delay += exec_time[i];
+
+        std::cerr << "Core" << i << endl;
+        std::cerr << "\tAcces Delay Sum: " << humanize(exec_time[i]) << " Cycles" << endl;
+        std::cerr << "\tInst Access Sum: " << humanize(exec_inst_access[i]) << endl;
+        std::cerr << "\tData Access Sum: " << humanize(exec_data_access[i]) << endl;
+        if (exec_inst_access[i] > 0){
+        
+            //load misses per kilo-instructions (MPKI)
+            uint64_t miss = cache.getIL1(i)->Misses() + cache.getDL1(i)->Misses();
+            std::cerr << "\tL1 MPKI: " << miss * 1.0 / (exec_inst_access[i]/1000) << endl;
+        
+            //AVG Delay per Data Access (ADPA)
+            std::cerr << "\tDPKA: " << exec_time[i] * 1.0 / exec_data_access[i] << endl;
+        }
+
+    }
+    std::cerr << endl;
+    
+    std::cerr << "Total Acces Delay Sum: " << humanize(total_delay) << " Cycles" << endl;
+    std::cerr << endl;
+    
 }
 
 GLOBALFUN int main(int argc, char *argv[])

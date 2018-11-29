@@ -341,9 +341,9 @@ std::ostream & CACHE_BASE::StatsLong(std::ostream & out) const
     //     out << std::endl;
     // }
 
-    //out << StringString("Total Hits:      ", headerWidth, ' ') << StringInt(Hits(),     numberWidth) << std::endl;
-    //out << StringString("Total Misses:    ", headerWidth, ' ') << StringInt(Misses(),   numberWidth) << std::endl;
-    // out << StringString("Total Accesses:  ", headerWidth, ' ') << StringInt(Accesses(), numberWidth) << std::endl;
+    out << StringString("Total Hits:      ", headerWidth, ' ') << StringInt(Hits(),     numberWidth) << std::endl;
+    out << StringString("Total Misses:    ", headerWidth, ' ') << StringInt(Misses(),   numberWidth) << std::endl;
+    out << StringString("Total Accesses:  ", headerWidth, ' ') << StringInt(Accesses(), numberWidth) << std::endl;
     // out << StringString("Total Miss Rate: ", headerWidth, ' ') << StringFlt(100.0 * Misses() / Accesses(), 2, numberWidth-1) << "%" << std::endl;
     out << StringString("Evictions:       ", headerWidth, ' ') << StringInt(Evictions(), numberWidth) << std::endl;
     //out << StringString("Flushes:         ", headerWidth, ' ') << StringInt(Flushes(), numberWidth) << std::endl;
@@ -423,7 +423,8 @@ bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::Access(ADDRINT addr, UINT32 size, ACC
         allHit &= localHit;
 
         // on miss, loads always allocate, stores optionally
-        if ( (! localHit) && (accessType == ACCESS_TYPE_LOAD || STORE_ALLOCATION == CACHE_ALLOC::STORE_ALLOCATE))
+        if ( (! localHit) && \
+            (accessType == ACCESS_TYPE_LOAD || STORE_ALLOCATION == CACHE_ALLOC::STORE_ALLOCATE))
         {
             set.Replace(tag);
         }
@@ -546,7 +547,9 @@ void CACHE<SET,MAX_SETS,STORE_ALLOCATION>::ResetStats()
 
 
 // define shortcuts
-#define CACHE_DIRECT_MAPPED(MAX_SETS, ALLOCATION) CACHE<CACHE_SET::DIRECT_MAPPED, MAX_SETS, ALLOCATION>
-#define CACHE_ROUND_ROBIN(MAX_SETS, MAX_ASSOCIATIVITY, ALLOCATION) CACHE<CACHE_SET::ROUND_ROBIN<MAX_ASSOCIATIVITY>, MAX_SETS, ALLOCATION>
+#define CACHE_DIRECT_MAPPED(MAX_SETS, ALLOCATION) \
+    CACHE<CACHE_SET::DIRECT_MAPPED, MAX_SETS, ALLOCATION>
+#define CACHE_ROUND_ROBIN(MAX_SETS, MAX_ASSOCIATIVITY, ALLOCATION) \
+    CACHE<CACHE_SET::ROUND_ROBIN<MAX_ASSOCIATIVITY>, MAX_SETS, ALLOCATION>
 
 #endif // MYPIN_CACHE_H

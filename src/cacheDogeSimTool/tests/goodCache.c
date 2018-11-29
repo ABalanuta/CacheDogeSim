@@ -50,7 +50,7 @@ void *accessorThread(void *arg){
     pthread_mutex_unlock(&lock);
     usleep(1 + (rand() % 2) );
   }
-  
+
   pthread_exit(result); 
 }
 
@@ -64,9 +64,9 @@ int main(int argc, char *argv[]){
 
   pthread_t acc[4];                                               
                                                                 //Main is also running on Core 0    
-  pthread_create(&acc[0],NULL, accessorThread,(void*)shrdPtr);  // Core 1 Active
+  pthread_create(&acc[0],NULL, sleeperThread,(void*)shrdPtr);  // Core 1 Sleeping
   usleep(10);
-  pthread_create(&acc[1],NULL,  sleeperThread,(void*)shrdPtr);  // Core 2 Sleeping
+  pthread_create(&acc[1],NULL, accessorThread,(void*)shrdPtr);  // Core 2 Active
   usleep(10);
   pthread_create(&acc[2],NULL, accessorThread,(void*)shrdPtr);  // Core 3 Active
 
