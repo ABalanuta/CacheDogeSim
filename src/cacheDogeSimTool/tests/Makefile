@@ -8,7 +8,7 @@ CC=gcc
 CFLAGS += -pthread -g -O3
 LDFLAGS= -pthread
 
-all: simple simple_1th smashCache goodCache
+all: simple simple_1th smashCache goodCachees
 
 simple:
 	$(CC) -c $(CFLAGS) -o simple.o simple.c
@@ -26,9 +26,14 @@ goodCache:
 	 $(CC) -c $(CFLAGS) -O0 -o goodCache.o goodCache.c
 	 $(CC) $(LDFLAGS) -o goodCache.x ./goodCache.o
 
+goodCachees:
+	 $(CC) -c $(CFLAGS) -O0 -o goodCachees.o goodCachees.c
+	 $(CC) $(LDFLAGS) -o goodCachees.x ./goodCachees.o
+
 clean:
 	-rm *.o
 	-rm simple.x
 	-rm simple_1th.x
 	-rm smashCache.x
 	-rm goodCache.x
+	-rm goodCachees.x
