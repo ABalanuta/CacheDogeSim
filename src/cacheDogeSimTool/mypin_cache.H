@@ -222,7 +222,7 @@ class CACHE_BASE
     const UINT32 _associativity;
     UINT32 _numberOfFlushes;
     UINT32 _numberOfResets;
-    UINT32 _numberOfEvictions;
+    UINT32 _numberOfInvalidations;
 
     // computed params
     const UINT32 _lineShift;
@@ -260,7 +260,7 @@ class CACHE_BASE
     CACHE_STATS Accesses() const { return Hits() + Misses();}
 
     CACHE_STATS Flushes() const { return _numberOfFlushes;}
-    CACHE_STATS Evictions() const { return _numberOfEvictions;}
+    CACHE_STATS Invalidations() const { return _numberOfInvalidations;}
     CACHE_STATS Resets() const { return _numberOfResets;}
 
     VOID SplitAddress(const ADDRINT addr, CACHE_TAG & tag, UINT32 & setIndex) const
@@ -281,9 +281,9 @@ class CACHE_BASE
 	_numberOfFlushes += 1;
     }
 
-    VOID IncEvictionsCounter()
+    VOID IncInvalidationsCounter()
     {
-	_numberOfEvictions += 1;
+	_numberOfInvalidations += 1;
     }
 
     VOID IncResetCounter()
@@ -345,7 +345,7 @@ std::ostream & CACHE_BASE::StatsLong(std::ostream & out) const
     out << StringString("Total Misses:    ", headerWidth, ' ') << StringInt(Misses(),   numberWidth) << std::endl;
     out << StringString("Total Accesses:  ", headerWidth, ' ') << StringInt(Accesses(), numberWidth) << std::endl;
     // out << StringString("Total Miss Rate: ", headerWidth, ' ') << StringFlt(100.0 * Misses() / Accesses(), 2, numberWidth-1) << "%" << std::endl;
-    out << StringString("Evictions:       ", headerWidth, ' ') << StringInt(Evictions(), numberWidth) << std::endl;
+    out << StringString("Invalidations:       ", headerWidth, ' ') << StringInt(Invalidations(), numberWidth) << std::endl;
     //out << StringString("Flushes:         ", headerWidth, ' ') << StringInt(Flushes(), numberWidth) << std::endl;
     //out << StringString("Stat Resets:     ", headerWidth, ' ') << StringInt(Resets(), numberWidth) << std::endl;
     out << std::endl;
@@ -391,10 +391,10 @@ class CACHE : public CACHE_BASE
     bool AccessSingleLine(ADDRINT addr, ACCESS_TYPE accessType);
     void Flush();
 
-    /// Evicts the Cache from addr to addr+size-1
-    UINT32 Evict(ADDRINT addr, UINT32 size);
-    /// Evicts a Cache addr that does not span cache lines
-    bool EvictSingleLine(ADDRINT addr);
+    /// Invalidates the Cache from addr to addr+size-1
+    UINT32 Invalidate(ADDRINT addr, UINT32 size);
+    /// Invalidates a Cache addr that does not span cache lines
+    bool InvalidateSingleLine(ADDRINT addr);
     
     void ResetStats();
 };
@@ -472,10 +472,10 @@ bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::AccessSingleLine(ADDRINT addr, ACCESS
 
 
 template <class SET, UINT32 MAX_SETS, UINT32 STORE_ALLOCATION>
-UINT32 CACHE<SET,MAX_SETS,STORE_ALLOCATION>::Evict(ADDRINT addr, UINT32 size)
+UINT32 CACHE<SET,MAX_SETS,STORE_ALLOCATION>::Invalidate(ADDRINT addr, UINT32 size)
 {
     const ADDRINT highAddr = addr + size;
-    UINT32 evicted = 0;
+    UINT32 invalidated = 0;
 
     const ADDRINT lineSize = LineSize();
     const ADDRINT notLineMask = ~(lineSize - 1);
@@ -489,20 +489,20 @@ UINT32 CACHE<SET,MAX_SETS,STORE_ALLOCATION>::Evict(ADDRINT addr, UINT32 size)
         SET & set = _sets[setIndex];
 
         if ( set.Delete(tag) ){
-            evicted++;
+            invalidated++;
         }
 
         addr = (addr & notLineMask) + lineSize; // start of next cache line
     }
     while (addr < highAddr);
 
-    if (evicted) IncEvictionsCounter();
+    if (invalidated) IncInvalidationsCounter();
 
-    return evicted;
+    return invalidated;
 }
 
 template <class SET, UINT32 MAX_SETS, UINT32 STORE_ALLOCATION>
-bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::EvictSingleLine(ADDRINT addr)
+bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::InvalidateSingleLine(ADDRINT addr)
 {
     CACHE_TAG tag;
     UINT32 setIndex;
@@ -514,9 +514,9 @@ bool CACHE<SET,MAX_SETS,STORE_ALLOCATION>::EvictSingleLine(ADDRINT addr)
 
     bool deleted = set.Delete(tag);
 
-    //std::cout << _name << "Evicting Addr " << StringHex(addr, 0) << " - " << StringHex(addr, 0) << " Evicted " <<  deleted << std::endl;
+    //std::cout << _name << "Invalidating Addr " << StringHex(addr, 0) << " - " << StringHex(addr, 0) << " Evicted " <<  deleted << std::endl;
 
-    if (deleted) IncEvictionsCounter();
+    if (deleted) IncInvalidationsCounter();
 
     return deleted;
 }

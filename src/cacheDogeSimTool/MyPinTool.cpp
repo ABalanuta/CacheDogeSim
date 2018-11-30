@@ -52,29 +52,29 @@ THREADID getVirtualId(THREADID thread_id)
 }
 
 // received the virtual id of the thread that is trying to write
-void tryEvictL1(ADDRINT addr, UINT32 size, VIRTUALID vid){
+void tryInvalidateL1(ADDRINT addr, UINT32 size, VIRTUALID vid){
 
-    //std::cout << "tryEvictL1 " << vid << endl;
+    //std::cout << "tryInvalidateL1 " << vid << endl;
 
     for (uint i = 0; i < 4; i++ ){
         if (i != vid)
         {
-            cache.getDL1(i)->Evict(addr, size);
-            //std::cout << "EvictL1 " << i << endl;
+            cache.getDL1(i)->Invalidate(addr, size);
+            //std::cout << "InvalidateL1 " << i << endl;
         }
     }
 
 }
 
 // received the virtual id of the thread that is trying to write
-void tryEvictL2(ADDRINT addr, UINT32 size, VIRTUALID vid){
+void tryInvalidateL2(ADDRINT addr, UINT32 size, VIRTUALID vid){
     
-    //std::cout << "tryEvictL2 " << vid << endl;
+    //std::cout << "tryInvalidateL2 " << vid << endl;
     for (uint i = 0; i < 2; i++ ){
         if (i != vid/2)
         {
-            cache.getUL2(i*2)->Evict(addr, size);
-            //std::cout << "EvictL2 " << i*2 << endl;
+            cache.getUL2(i*2)->Invalidate(addr, size);
+            //std::cout << "InvalidateL2 " << i*2 << endl;
         }
     }
 
@@ -113,7 +113,7 @@ LOCALFUN VOID MemRefMulti(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE acc
     const BOOL dl1Hit = cache.getDL1(vid)->Access(addr, size, accessType);
 
     if ( !dl1Hit ){
-        tryEvictL1(addr, size, vid);
+        tryInvalidateL1(addr, size, vid);
         // second level unified Cache
         Ul2Access(addr, size, accessType, vid);
     }
@@ -133,7 +133,7 @@ LOCALFUN VOID MemRefSingle(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE ac
     const BOOL dl1Hit = cache.getDL1(vid)->AccessSingleLine(addr, accessType);
 
     if ( !dl1Hit ){
-        tryEvictL1(addr, size, vid);
+        tryInvalidateL1(addr, size, vid);
         // second level unified Cache
         Ul2Access(addr, size, accessType, vid);
     }
@@ -151,7 +151,7 @@ LOCALFUN VOID Ul2Access(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE acces
     const BOOL ul2Hit = cache.getUL2(vid)->Access(addr, size, accessType);
 
     if ( !ul2Hit ) {
-        tryEvictL2(addr, size, vid);
+        tryInvalidateL2(addr, size, vid);
 
         // third level unified cache
         Ul3Access(addr, size, accessType, vid);
