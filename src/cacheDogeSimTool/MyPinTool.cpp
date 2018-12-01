@@ -4,14 +4,10 @@
  * Copyright (c) 2018 Carnegie Mellon University
  */
 
-
-/*! @file
- *  This file contains an ISA-portable PIN tool for functional simulation of
- *  instruction+data TLB+cache hierarchies
- */
-
 #include <iostream>
 #include <sstream>
+#include <numeric>
+#include <algorithm>
 
 #include "pin.H"
 
@@ -21,14 +17,27 @@ typedef UINT32 CACHE_STATS; // type of cache hit/miss counters
 #include "mycache_conf.H"
 
 
-#define CACHE_DOGE_ENABLED false
+#define CACHE_DOGE_ENABLED true
+#define CHECK_INTERVAL (2 * 10   * 1000) // in Millions of Inst
+#define MTPKI (100)                      // Migration Threshold per K instructions
+#define INVALIDATION_RATIO_THRESHOLD (1.0/6)         // Precentage of Invalidations cause by a pair
 
 
 // Other Vars
 MyCache cache;
+uint8_t thread_id_table[4] = {0, 1, 2, 3};
 uint64_t exec_time[4];
 uint64_t exec_inst_access[4];
 uint64_t exec_data_access[4];
+
+uint64_t invalidation_table_l1[4][4];
+uint64_t invalidation_table_l1_sum[4][4];
+//        Dst|
+//___________| DstCore 0 | DstCore 1 | DstCore 2 | DstCore 3 |
+//SrcCore 0 |     X     |           |           |           |
+//SrcCore 1 |           |     X     |           |           |
+//SrcCore 2 |           |           |     X     |           |
+//SrcCore 3 |           |           |           |     X     |
 
 LOCALFUN VOID InsRef(ADDRINT addr, THREADID tid);
 LOCALFUN VOID MemRefMulti(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE accessType, THREADID tid);
@@ -38,15 +47,156 @@ LOCALFUN VOID Ul3Access(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE acces
 LOCALFUN VOID Instruction(INS ins, VOID *v);
 LOCALFUN VOID Fini(int code, VOID * v);
 THREADID getVirtualId(THREADID thread_id);
+void score_board(uint64_t mat[4][4]);
+bool check_conflicts();
+string humanize(uint64_t var);
+
+
+bool check_conflicts()
+{
+
+    if (!CACHE_DOGE_ENABLED){
+        return false;
+    }
+
+    uint64_t triangle[4][4] = {0};
+
+    //        Dst|
+    //___________| DstCore 0 | DstCore 1 | DstCore 2 | DstCore 3 |
+    //SrcCore 0 |     X     |           |           |           |
+    //SrcCore 1 |           |     X     |           |           |
+    //SrcCore 2 |           |           |     X     |           |
+    //SrcCore 3 |           |           |           |     X     |
+    triangle[0][1] = invalidation_table_l1[0][1] + invalidation_table_l1[1][0];
+    triangle[0][2] = invalidation_table_l1[0][2] + invalidation_table_l1[2][0];
+    triangle[0][3] = invalidation_table_l1[0][3] + invalidation_table_l1[3][0];
+
+    triangle[1][2] = invalidation_table_l1[1][2] + invalidation_table_l1[2][1];
+    triangle[1][3] = invalidation_table_l1[1][3] + invalidation_table_l1[3][1];
+
+    triangle[2][3] = invalidation_table_l1[2][3] + invalidation_table_l1[3][2];
+
+    // std::cerr << endl;
+    // score_board(triangle);
+    // std::cerr << endl;
+
+    uint64_t sum =  triangle[0][1] + triangle[0][2] + triangle[0][3] + \
+                    triangle[1][2] + triangle[1][3] + triangle[2][3];
+    //printf("Sum %s\n", humanize(sum).c_str());
+
+    // Important Ones
+    // Core <0-2> <0-3> <1-2> <1-3>
+    uint64_t migration_candidates[4] = {    triangle[0][2], triangle[0][3], \
+                                            triangle[1][2], triangle[1][3] };
+
+    uint8_t i_max = 0;
+    for (int i = 0; i<4; i++){
+        if (migration_candidates[i] > migration_candidates[i_max]) {
+            i_max = i;
+            //printf("Max is Core %d\n", i_max);
+        }
+    }
+
+    // Check if migration is relevant
+    if (double(migration_candidates[i_max])/double(sum) < INVALIDATION_RATIO_THRESHOLD) {
+        return false;
+    }
+
+    // score_board(invalidation_table_l1);
+    // std::cerr << endl;
+
+    uint8_t random = sum % 2;
+        
+    switch(i_max) {
+
+        case 0: // <0-2>
+            // We should migrate just one of the cores
+            // Randomly decide which core to migrate
+            if (random){ // 0 migrates to 3
+                cache.getDL1(0)->Flush(); // Clean Caches
+                cache.getDL1(3)->Flush();
+                std::swap(thread_id_table[0], thread_id_table[3]);
+                //printf("Migrating Cores 0 -> 3 \n");
+            }else{ // migrate 2 to 1
+                cache.getDL1(2)->Flush(); // Clean Caches
+                cache.getDL1(1)->Flush();
+                std::swap(thread_id_table[2], thread_id_table[1]);
+                // printf("Migrating Cores 2 -> 1 \n");
+            }
+            break;
+
+        case 1: // <0-3>
+            // Randomly decide which core to migrate
+            if (random){ // 0 migrates to 2
+                cache.getDL1(0)->Flush(); // Clean Caches
+                cache.getDL1(2)->Flush();
+                std::swap(thread_id_table[0], thread_id_table[2]);
+                //printf("Migrating Cores 0 -> 2 \n");
+            }else{ // migrate 3 to 1
+                cache.getDL1(3)->Flush(); // Clean Caches
+                cache.getDL1(1)->Flush();
+                std::swap(thread_id_table[3], thread_id_table[1]);
+                //printf("Migrating Cores 3 -> 1 \n");
+            }
+            break;
+        
+        case 2: // <1-2>
+            // Randomly decide which core to migrate
+            if (random){ // 1 migrates to 3
+                cache.getDL1(1)->Flush(); // Clean Caches
+                cache.getDL1(3)->Flush();
+                std::swap(thread_id_table[1], thread_id_table[3]);
+                //printf("Migrating Cores 1 -> 3 \n");
+            }else{ // migrate 2 to 0
+                cache.getDL1(2)->Flush(); // Clean Caches
+                cache.getDL1(0)->Flush();
+                std::swap(thread_id_table[2], thread_id_table[0]);
+                //printf("Migrating Cores 2 -> 0 \n");
+            }
+            break;
+        
+        case 3: // <1-3>
+            // Randomly decide which core to migrate
+            if (random){ // 1 migrates to 2
+                cache.getDL1(1)->Flush(); // Clean Caches
+                cache.getDL1(2)->Flush();
+                std::swap(thread_id_table[1], thread_id_table[2]);
+                // printf("Migrating Cores 1 -> 2 \n");
+            }else{ // migrate 3 to 1
+                cache.getDL1(3)->Flush(); // Clean Caches
+                cache.getDL1(0)->Flush();
+                std::swap(thread_id_table[3], thread_id_table[0]);
+                //printf("Migrating Cores 3 -> 0 \n");
+            }
+            break;
+    }
+
+    //printf("Table [ %d %d %d %d ]\n", thread_id_table[0], thread_id_table[1], thread_id_table[2], thread_id_table[3]);
+
+    // Heep history and reset counters
+    for(int i = 0; i < 4; i++){
+        for(int j = 0; j < 4; j++){
+            invalidation_table_l1_sum[i][j] += invalidation_table_l1[i][j];
+            invalidation_table_l1[i][j] = 0;
+        }
+    }
+
+    
+    // score_board(invalidation_table_l1_sum);
+    // std::cerr << endl;
+    // std::cerr << endl;
+    // std::cerr << endl;
+
+    return true;
+} 
 
 
 
 THREADID getVirtualId(THREADID thread_id)
 {
     if (CACHE_DOGE_ENABLED) {
-        //TODO MAGIC HERE
         // Access Swap Table
-        return -1;
+        return thread_id_table[thread_id % 4];
     }
     return (thread_id % 4);
 }
@@ -54,13 +204,11 @@ THREADID getVirtualId(THREADID thread_id)
 // received the virtual id of the thread that is trying to write
 void tryInvalidateL1(ADDRINT addr, UINT32 size, VIRTUALID vid){
 
-    //std::cout << "tryInvalidateL1 " << vid << endl;
-
     for (uint i = 0; i < 4; i++ ){
         if (i != vid)
         {
-            cache.getDL1(i)->Invalidate(addr, size);
-            //std::cout << "InvalidateL1 " << i << endl;
+            UINT32 invds = cache.getDL1(i)->Invalidate(addr, size);
+            invalidation_table_l1[vid][i] += invds;
         }
     }
 
@@ -97,6 +245,11 @@ LOCALFUN VOID InsRef(ADDRINT addr, THREADID tid)
 
     // second level unified Cache
     if ( ! il1Hit) Ul2Access(addr, size, accessType, vid);
+
+    // Check conclicts
+    if (accumulate(exec_inst_access, exec_inst_access+4, 0) % CHECK_INTERVAL == 0){
+        check_conflicts();
+    }
 }
 
 // Accessing L1 Data Caches Read or Write
@@ -223,7 +376,8 @@ LOCALFUN VOID Instruction(INS ins, VOID *v)
 }
 
 
-string humanize(uint64_t var){
+string humanize(uint64_t var)
+{
     static const char sz[] = {' ', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'};
     int index = 0;
     std::ostringstream out;
@@ -238,6 +392,24 @@ string humanize(uint64_t var){
     return out.str();
 }
 
+void score_board(uint64_t mat[4][4]){
+    //        Dst|
+    //___________| DstCore 0 | DstCore 1 | DstCore 2 | DstCore 3 |
+    //SrcCore 0 |     X     |           |           |           |
+    //SrcCore 1 |           |     X     |           |           |
+    //SrcCore 2 |           |           |     X     |           |
+    //SrcCore 3 |           |           |           |     X     |
+    printf("___________| DstCore 0 | DstCore 1 | DstCore 2 | DstCore 3 |\n");
+    for(int i = 0; i < 4; i++ ){
+        printf(" SrcCore %d | %9s | %9s | %9s | %9s |\n", i,
+            humanize(mat[i][0]).c_str(), \
+            humanize(mat[i][1]).c_str(), \
+            humanize(mat[i][2]).c_str(), \
+            humanize(mat[i][3]).c_str() );
+    }
+}
+
+
 LOCALFUN VOID Fini(int code, VOID * v)
 {   
     // std::cerr << *cache.getIL1(0);
@@ -245,17 +417,21 @@ LOCALFUN VOID Fini(int code, VOID * v)
     // std::cerr << *cache.getIL1(2);
     // std::cerr << *cache.getIL1(3);
 
-    std::cerr << *cache.getDL1(0);
-    std::cerr << *cache.getDL1(1);
-    std::cerr << *cache.getDL1(2);
-    std::cerr << *cache.getDL1(3);
+    // std::cerr << *cache.getDL1(0);
+    // std::cerr << *cache.getDL1(1);
+    // std::cerr << *cache.getDL1(2);
+    // std::cerr << *cache.getDL1(3);
     
-    std::cerr << *cache.getUL2(0);
-    std::cerr << *cache.getUL2(2);
+    // std::cerr << *cache.getUL2(0);
+    // std::cerr << *cache.getUL2(2);
 
-    std::cerr << *cache.getUL3(0);
+    // std::cerr << *cache.getUL3(0);
 
     uint64_t total_delay = 0;
+    uint64_t total_miss = 0;
+    uint64_t exec_time_sum = accumulate(exec_time, exec_time+4, 0);
+    uint64_t exec_inst_access_sum = accumulate(exec_inst_access, exec_inst_access+4, 0);
+    uint64_t exec_data_access_sum = accumulate(exec_data_access, exec_data_access+4, 0);
     
     for(int i = 0; i < 4; i++ ){
 
@@ -266,21 +442,25 @@ LOCALFUN VOID Fini(int code, VOID * v)
         std::cerr << "\tInst Access Sum: " << humanize(exec_inst_access[i]) << endl;
         std::cerr << "\tData Access Sum: " << humanize(exec_data_access[i]) << endl;
         if (exec_inst_access[i] > 0){
-        
             //load misses per kilo-instructions (MPKI)
             uint64_t miss = cache.getIL1(i)->Misses() + cache.getDL1(i)->Misses();
             std::cerr << "\tL1 MPKI: " << miss * 1.0 / (exec_inst_access[i]/1000) << endl;
-        
+            total_miss += miss;
+            
             //AVG Delay per Data Access (ADPA)
             std::cerr << "\tDPKA: " << exec_time[i] * 1.0 / exec_data_access[i] << endl;
         }
 
     }
     std::cerr << endl;
-    
+
     std::cerr << "Total Acces Delay Sum: " << humanize(total_delay) << " Cycles" << endl;
+    std::cerr << "Total MPKI AVG: " << (total_miss * 1.0) / (exec_inst_access_sum/1000) << endl;
+    std::cerr << "Total DPKA: " <<  exec_time_sum * 1.0 / exec_data_access_sum << endl;
     std::cerr << endl;
-    
+
+    score_board(invalidation_table_l1_sum);
+    std::cerr << endl;
 }
 
 GLOBALFUN int main(int argc, char *argv[])

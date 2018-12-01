@@ -345,7 +345,7 @@ std::ostream & CACHE_BASE::StatsLong(std::ostream & out) const
     out << StringString("Total Misses:    ", headerWidth, ' ') << StringInt(Misses(),   numberWidth) << std::endl;
     out << StringString("Total Accesses:  ", headerWidth, ' ') << StringInt(Accesses(), numberWidth) << std::endl;
     // out << StringString("Total Miss Rate: ", headerWidth, ' ') << StringFlt(100.0 * Misses() / Accesses(), 2, numberWidth-1) << "%" << std::endl;
-    out << StringString("Invalidations:       ", headerWidth, ' ') << StringInt(Invalidations(), numberWidth) << std::endl;
+    out << StringString("Invalidations:   ", headerWidth, ' ') << StringInt(Invalidations(), numberWidth) << std::endl;
     //out << StringString("Flushes:         ", headerWidth, ' ') << StringInt(Flushes(), numberWidth) << std::endl;
     //out << StringString("Stat Resets:     ", headerWidth, ' ') << StringInt(Resets(), numberWidth) << std::endl;
     out << std::endl;
