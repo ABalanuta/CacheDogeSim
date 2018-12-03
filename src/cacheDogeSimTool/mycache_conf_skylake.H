@@ -126,7 +126,7 @@ class MyCache
         };
         
         // Level 2 Unified Cache        
-        UL2::CACHE* ul2[2] = {
+        UL2::CACHE* ul2[4] = {
             //new UL2::CACHE("L2 Left  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
             //new UL2::CACHE("L2 Right Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity), -- changed by Nidhi bcoz 4 L2 caches
             new UL2::CACHE("L2 Core0  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),

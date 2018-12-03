@@ -3,16 +3,14 @@
 
 typedef THREADID VIRTUALID;
 
-// CPU Intel i7-7700K (Skylake) @4Ghz Characteristics (https://www.7-cpu.com/cpu/Skylake.html)
-// .25 ns/cycle
-// http://www.cpu-world.com/CPUs/Core_i7/Intel-Core%20i7%20i7-7700K.html
+// CPU Intel Knights Landing - 1.4GHz
+// .71 ns/cycle
+// http://mrfunk.info/?page_id=181
+// https://www.agner.org/optimize/blog/read.php?i=772&v=t
 
-#define L1_CACHE_LATENCY         5
-#define L2_CACHE_LATENCY         12
-#define L3_CACHE_LATENCY         47
-//#define RAM_LATENCY              204
-//Modified to 204 cycles to account for 51ns + 42 cycles
-#define RAM_LATENCY 		246
+#define L1_CACHE_LATENCY         2
+#define L2_CACHE_LATENCY         10
+#define RAM_LATENCY 		212
 
 //Defines Cache Configurations
 namespace ITLR
@@ -78,7 +76,7 @@ namespace DL1
 namespace UL2
 {
     // 2nd level unified cache: 2 MB, 64 B lines, direct mapped
-    const UINT32 cacheSize = 256*KILO;
+    const UINT32 cacheSize = 1024*KILO;
     const UINT32 lineSize = 64;
     //const UINT32 associativity = 1; --> changed to 4 by Nidhi
     const UINT32 associativity = 4;
@@ -110,35 +108,177 @@ class MyCache
     private:
 
         // Level 1 Instruction Cache
-        IL1::CACHE* il1[4] = {
+        IL1::CACHE* il1[72] = {
             new IL1::CACHE("L1I Core0 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
             new IL1::CACHE("L1I Core1 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
             new IL1::CACHE("L1I Core2 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
             new IL1::CACHE("L1I Core3 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core4 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core5 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core6 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core7 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core8 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core9 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core10 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core11 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core12 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core13 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core14 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core15 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core16 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core17 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core18 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core19 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core20 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core21 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core22 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core23 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core24 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core25 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core26 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core27 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core28 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core29 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core30 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core31 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core32 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core33 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core34 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core35 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core36 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core37 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core38 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core39 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core40 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core41 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core42 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core43 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core44 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core45 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core46 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core47 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core48 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core49 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core50 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core51 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core52 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core53 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core54 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core55 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core56 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core57 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core58 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core59 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core60 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core61 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core62 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
+            new IL1::CACHE("L1I Core63 Cache", IL1::cacheSize, IL1::lineSize, IL1::associativity),
         };
         
         // Level 1 Data Cache
-        DL1::CACHE* dl1[4] = {
-            new DL1::CACHE("L1D Core0 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
-            new DL1::CACHE("L1D Core1 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
-            new DL1::CACHE("L1D Core2 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
-            new DL1::CACHE("L1D Core3 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+        DL1::CACHE* dl1[72] = {
+            new DL1::CACHE("L1I Core0 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core1 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core2 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core3 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core4 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core5 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core6 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core7 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core8 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core9 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core10 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core11 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core12 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core13 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core14 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core15 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core16 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core17 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core18 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core19 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core20 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core21 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core22 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core23 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core24 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core25 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core26 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core27 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core28 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core29 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core30 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core31 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core32 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core33 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core34 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core35 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core36 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core37 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core38 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core39 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core40 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core41 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core42 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core43 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core44 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core45 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core46 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core47 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core48 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core49 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core50 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core51 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core52 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core53 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core54 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core55 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core56 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core57 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core58 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core59 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core60 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core61 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core62 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
+            new DL1::CACHE("L1I Core63 Cache", DL1::cacheSize, DL1::lineSize, DL1::associativity),
         };
         
         // Level 2 Unified Cache        
-        UL2::CACHE* ul2[2] = {
-            //new UL2::CACHE("L2 Left  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
-            //new UL2::CACHE("L2 Right Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity), -- changed by Nidhi bcoz 4 L2 caches
+        UL2::CACHE* ul2[36] = {
             new UL2::CACHE("L2 Core0  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
             new UL2::CACHE("L2 Core1  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
             new UL2::CACHE("L2 Core2  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
             new UL2::CACHE("L2 Core3  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core4  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core5  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core6  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core7  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core8  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core9  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core10  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core11 Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core12  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core13  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core14  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core15  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core16  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core17  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core18  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core19  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core20  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core21  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core22  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core23  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core24  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core25  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core26  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core27 Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core28  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core29  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core30  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core31  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
         };
 
-        // Level 3 Unified Cache
-        UL3::CACHE* ul3 = new UL3::CACHE("L3 Unified Cache", UL3::cacheSize, \
-            UL3::lineSize, UL3::associativity);
-    
     public:
 
         IL1::CACHE* getIL1(VIRTUALID id){
@@ -150,12 +290,7 @@ class MyCache
         }
         
         UL2::CACHE* getUL2(VIRTUALID id){
-            //return ul2[id/2]; -- changed by Nidhi because 4 L2 caches
-            return ul2[id]; 
+            return ul2[id/2]; 
         }
         
-        UL3::CACHE* getUL3(VIRTUALID id){
-            return ul3;
-        }
-
 };
