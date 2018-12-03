@@ -5,11 +5,14 @@ typedef THREADID VIRTUALID;
 
 // CPU Intel i7-7700K (Skylake) @4Ghz Characteristics (https://www.7-cpu.com/cpu/Skylake.html)
 // .25 ns/cycle
+// http://www.cpu-world.com/CPUs/Core_i7/Intel-Core%20i7%20i7-7700K.html
 
 #define L1_CACHE_LATENCY         5
 #define L2_CACHE_LATENCY         12
 #define L3_CACHE_LATENCY         47
-#define RAM_LATENCY              204
+//#define RAM_LATENCY              204
+//Modified to 204 cycles to account for 51ns + 42 cycles
+#define RAM_LATENCY 		246
 
 //Defines Cache Configurations
 namespace ITLR
@@ -44,8 +47,10 @@ namespace IL1
 {
     // 1st level instruction cache: 32 kB, 32 B lines, 32-way associative
     const UINT32 cacheSize = 32*KILO;
-    const UINT32 lineSize = 32;
-    const UINT32 associativity = 32;
+    //const UINT32 lineSize = 32; -- Changed by Nidhi to 64B
+    const UINT32 lineSize = 64;
+    //const UINT32 associativity = 32; -- Changed by Nidhi to 8
+    const UINT32 associativity = 8;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_NO_ALLOCATE;
 
     const UINT32 max_sets = cacheSize / (lineSize * associativity);
@@ -58,8 +63,10 @@ namespace DL1
 {
     // 1st level data cache: 32 kB, 32 B lines, 32-way associative
     const UINT32 cacheSize = 32*KILO;
-    const UINT32 lineSize = 32;
-    const UINT32 associativity = 32;
+    //const UINT32 lineSize = 32; -- Changed by Nidhi to 64B
+    const UINT32 lineSize = 64;
+    //const UINT32 associativity = 32; -- Changed by Nidhi to 8
+    const UINT32 associativity = 8;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_NO_ALLOCATE;
 
     const UINT32 max_sets = cacheSize / (lineSize * associativity);
@@ -73,7 +80,8 @@ namespace UL2
     // 2nd level unified cache: 2 MB, 64 B lines, direct mapped
     const UINT32 cacheSize = 256*KILO;
     const UINT32 lineSize = 64;
-    const UINT32 associativity = 1;
+    //const UINT32 associativity = 1; --> changed to 4 by Nidhi
+    const UINT32 associativity = 4;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_ALLOCATE;
 
     const UINT32 max_sets = cacheSize / (lineSize * associativity);
@@ -84,9 +92,11 @@ namespace UL2
 namespace UL3
 {
     // 3rd level unified cache: 2 MB, 64 B lines, direct mapped
-    const UINT32 cacheSize = 2*MEGA;
+    //const UINT32 cacheSize = 2*MEGA; -- changed to 8 by Nidhi 
+    const UINT32 cacheSize = 8*MEGA;
     const UINT32 lineSize = 64;
-    const UINT32 associativity = 1;
+    //const UINT32 associativity = 1; -- changed to 16 by Nidhi
+    const UINT32 associativity = 16; 
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_ALLOCATE;
 
     const UINT32 max_sets = cacheSize / (lineSize * associativity);
@@ -117,8 +127,12 @@ class MyCache
         
         // Level 2 Unified Cache        
         UL2::CACHE* ul2[2] = {
-            new UL2::CACHE("L2 Left  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
-            new UL2::CACHE("L2 Right Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            //new UL2::CACHE("L2 Left  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            //new UL2::CACHE("L2 Right Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity), -- changed by Nidhi bcoz 4 L2 caches
+            new UL2::CACHE("L2 Core0  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core1  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core2  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
+            new UL2::CACHE("L2 Core3  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
         };
 
         // Level 3 Unified Cache
@@ -136,7 +150,8 @@ class MyCache
         }
         
         UL2::CACHE* getUL2(VIRTUALID id){
-            return ul2[id/2];
+            //return ul2[id/2]; -- changed by Nidhi because 4 L2 caches
+            return ul2[id]; 
         }
         
         UL3::CACHE* getUL3(VIRTUALID id){
