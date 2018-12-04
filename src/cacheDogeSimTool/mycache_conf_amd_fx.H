@@ -59,8 +59,8 @@ namespace IL1
 
 namespace DL1
 {
-    // 1st level data cache: 32 kB, 32 B lines, 32-way associative
-    const UINT32 cacheSize = 32*KILO;
+    // 1st level data cache: 16 kB, 32 B lines, 32-way associative
+    const UINT32 cacheSize = 16*KILO;
     const UINT32 lineSize = 64;
     const UINT32 associativity = 4;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_NO_ALLOCATE;
