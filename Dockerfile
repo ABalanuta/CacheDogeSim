@@ -20,7 +20,7 @@ ENV PARSEC_BIN "parsec-2.1-amd64-linux"
 ENV PARSEC_URL "http://parsec.cs.princeton.edu/download/2.1/$PARSEC.tar.gz"
 ENV PARSEC_BIN_URL "http://parsec.cs.princeton.edu/download/2.1/binaries/$PARSEC_BIN.tar.gz"
 ENV PARSEC_DIR "parsec-2.1"
-RUN aria2c -x 16 --summary-interval=1 $PARSEC_URL && tar -xvf $PARSEC.tar.gz && rm $PARSEC_CORE.tar.gz
+RUN aria2c -x 16 --summary-interval=1 $PARSEC_URL && tar -xvf $PARSEC.tar.gz && rm $PARSEC.tar.gz
 RUN aria2c -x 16 --summary-interval=1 $PARSEC_BIN_URL && tar -xvf $PARSEC_BIN.tar.gz && rm $PARSEC_BIN.tar.gz
 
 VOLUME /${WORK_DIR}/src
