@@ -1,7 +1,5 @@
 
-#include "mypin_cache.H"
-
-typedef THREADID VIRTUALID;
+#include "../mypin_cache.H"
 
 // CPU AMD FX 4350 (Bulldozer) @4.2Ghz Characteristics (http://www.cpu-world.com/CPUs/Bulldozer/AMD-FX-Series%20FX-4350.html)
 // .24 ns/cycle

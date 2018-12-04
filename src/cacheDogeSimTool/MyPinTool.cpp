@@ -17,10 +17,10 @@ typedef UINT32 CACHE_STATS; // type of cache hit/miss counters
 #include "mycache_conf.H"
 
 
-#define CACHE_DOGE_ENABLED true
-#define CHECK_INTERVAL (2 * 10   * 1000) // in Millions of Inst
-#define MTPKI (100)                      // Migration Threshold per K instructions
-#define INVALIDATION_RATIO_THRESHOLD (1.0/6)         // Precentage of Invalidations cause by a pair
+
+#define CHECK_INTERVAL (3 * 10 * 1000) // in Millions of Inst
+// #define MTPKI (100)                      // Migration Threshold per K instructions
+#define INVALIDATION_RATIO_THRESHOLD (1.0/2.0)         // Precentage of Invalidations cause by a pair
 
 
 // Other Vars
@@ -32,6 +32,13 @@ uint64_t exec_data_access[4];
 
 uint64_t invalidation_table_l1[4][4];
 uint64_t invalidation_table_l1_sum[4][4];
+uint64_t core_migrations = 0;
+
+KNOB<bool> KnobMigrationEnabled(KNOB_MODE_WRITEONCE, "pintool", "migrates", "false",
+    "Cache Migration Mechanism");
+
+#define CACHE_DOGE_ENABLED KnobMigrationEnabled
+
 //        Dst|
 //___________| DstCore 0 | DstCore 1 | DstCore 2 | DstCore 3 |
 //SrcCore 0 |     X     |           |           |           |
@@ -180,6 +187,8 @@ bool check_conflicts()
             invalidation_table_l1[i][j] = 0;
         }
     }
+
+    core_migrations++;
 
     
     // score_board(invalidation_table_l1_sum);
@@ -457,20 +466,39 @@ LOCALFUN VOID Fini(int code, VOID * v)
     std::cerr << "Total Acces Delay Sum: " << humanize(total_delay) << " Cycles" << endl;
     std::cerr << "Total MPKI AVG: " << (total_miss * 1.0) / (exec_inst_access_sum/1000) << endl;
     std::cerr << "Total DPKA: " <<  exec_time_sum * 1.0 / exec_data_access_sum << endl;
+    std::cerr << "Core Migrations is " << (CACHE_DOGE_ENABLED?"Enabled":"Disabled") << endl;
+    std::cerr << "Total Core Migrations: " << core_migrations << endl;
     std::cerr << endl;
 
     score_board(invalidation_table_l1_sum);
     std::cerr << endl;
 }
 
+INT32 Usage()
+{
+    cerr << "This tool is a multicore cache simulator" << endl;
+    cerr << endl << KNOB_BASE::StringKnobSummary() << endl;
+    return -1;
+}
+
 GLOBALFUN int main(int argc, char *argv[])
 {
-    PIN_Init(argc, argv);
+    PIN_InitSymbols();
+
+    if( PIN_Init(argc,argv) )
+    {
+        return Usage();
+    }
+
+
     INS_AddInstrumentFunction(Instruction, 0);
     PIN_AddFiniFunction(Fini, 0);
+
+    std::cerr << "Core Migrations is " << (CACHE_DOGE_ENABLED?"Enabled":"Disabled") << endl;
 
     // Never returns
     PIN_StartProgram();
 
     return 0; // make compiler happy
 }
+
