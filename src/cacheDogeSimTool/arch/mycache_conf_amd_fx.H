@@ -91,6 +91,7 @@ namespace UL3
     const UINT32 max_sets = cacheSize / (lineSize * associativity);
 
     typedef CACHE_DIRECT_MAPPED(max_sets, allocation) CACHE;
+<<<<<<< Updated upstream
 }
 
 
@@ -143,3 +144,6 @@ class MyCache
         }
 
 };
+=======
+}
+>>>>>>> Stashed changes
