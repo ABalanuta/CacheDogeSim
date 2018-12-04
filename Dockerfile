@@ -15,12 +15,12 @@ RUN aria2c -x 16 --summary-interval=1 $PIN_URL && tar -xvf $PIN_VER.tar.gz && rm
 RUN cd $WORK_DIR/$PIN_VER/source/tools/ManualExamples && make all TARGET=intel64
 RUN cd $WORK_DIR/$PIN_VER/source/tools/Memory && make all TARGET=intel64
 
-ENV PARSEC_CORE "parsec-3.0-core"
-ENV PARSEC_INPUTS "parsec-3.0-input-sim"
-ENV PARSEC_CORE_URL "http://parsec.cs.princeton.edu/download/3.0/$PARSEC_CORE.tar.gz"
-ENV PARSEC_INPUTS_URL "http://parsec.cs.princeton.edu/download/3.0/$PARSEC_INPUTS.tar.gz"
-ENV PARSEC_DIR "parsec-3.0"
-RUN aria2c -x 16 --summary-interval=1 $PARSEC_CORE_URL && tar -xvf $PARSEC_CORE.tar.gz && rm $PARSEC_CORE.tar.gz
-RUN aria2c -x 16 --summary-interval=1 $PARSEC_INPUTS_URL && tar -xvf $PARSEC_INPUTS.tar.gz && rm $PARSEC_INPUTS.tar.gz
+ENV PARSEC "parsec-2.1"
+ENV PARSEC_BIN "parsec-2.1-amd64-linux"
+ENV PARSEC_URL "http://parsec.cs.princeton.edu/download/2.1/$PARSEC.tar.gz"
+ENV PARSEC_BIN_URL "http://parsec.cs.princeton.edu/download/2.1/binaries/$PARSEC_BIN.tar.gz"
+ENV PARSEC_DIR "parsec-2.1"
+RUN aria2c -x 16 --summary-interval=1 $PARSEC_URL && tar -xvf $PARSEC.tar.gz && rm $PARSEC_CORE.tar.gz
+RUN aria2c -x 16 --summary-interval=1 $PARSEC_BIN_URL && tar -xvf $PARSEC_BIN.tar.gz && rm $PARSEC_BIN.tar.gz
 
 VOLUME /${WORK_DIR}/src
