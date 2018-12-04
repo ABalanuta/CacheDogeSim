@@ -7,7 +7,7 @@
 
 #define L1_CACHE_LATENCY         5
 #define L2_CACHE_LATENCY         12
-#define L3_CACHE_LATENCY         163
+#define L3_CACHE_LATENCY         267
 #define RAM_LATENCY              0
 //Modified to 204 cycles to account for 51ns + 42 cycles
 

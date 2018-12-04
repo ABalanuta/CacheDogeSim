@@ -1,17 +1,6 @@
 
 #include "../mypin_cache.H"
 
-
-
-
-
-// Latency in Cycles
-// #define L1_CACHE_LATENCY         5
-// #define L2_CACHE_LATENCY         12
-// #define L3_CACHE_LATENCY         47
-// #define RAM_LATENCY              204
-
-
 #define L1_CACHE_LATENCY            2
 #define L2_CACHE_LATENCY            10
 #define L3_CACHE_LATENCY            212     // Has no L3 Cache
