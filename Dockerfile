@@ -23,4 +23,6 @@ ENV PARSEC_DIR "parsec-2.1"
 RUN aria2c -x 16 --summary-interval=1 $PARSEC_URL && tar -xvf $PARSEC.tar.gz && rm $PARSEC.tar.gz
 RUN aria2c -x 16 --summary-interval=1 $PARSEC_BIN_URL && tar -xvf $PARSEC_BIN.tar.gz && rm $PARSEC_BIN.tar.gz
 
+RUN apt-get install -y libjpeg62
+
 VOLUME /${WORK_DIR}/src
