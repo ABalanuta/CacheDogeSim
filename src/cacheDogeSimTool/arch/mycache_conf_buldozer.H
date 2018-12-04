@@ -1,5 +1,5 @@
 
-#include "mypin_cache.H"
+#include "../mypin_cache.H"
 
 //AMD FX-4350 specifications
 

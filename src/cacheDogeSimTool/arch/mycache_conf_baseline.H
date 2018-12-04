@@ -1,10 +1,16 @@
 
-#include "mypin_cache.H"
+#include "../mypin_cache.H"
 
-// CPU Intel Knights Landing - 1.4GHz
-// .71 ns/cycle
-// http://mrfunk.info/?page_id=181
-// https://www.agner.org/optimize/blog/read.php?i=772&v=t
+
+
+
+
+// Latency in Cycles
+// #define L1_CACHE_LATENCY         5
+// #define L2_CACHE_LATENCY         12
+// #define L3_CACHE_LATENCY         47
+// #define RAM_LATENCY              204
+
 
 #define L1_CACHE_LATENCY            2
 #define L2_CACHE_LATENCY            10
@@ -14,10 +20,10 @@
 //Defines Cache Configurations
 namespace IL1
 {
-    // 1st level instruction cache: 32 kB, 32 B lines, 8-way associative
+    // 1st level instruction cache: 32 kB, 32 B lines, 32-way associative
     const UINT32 cacheSize = 32*KILO;
-    const UINT32 lineSize = 64;
-    const UINT32 associativity = 8;
+    const UINT32 lineSize = 32;
+    const UINT32 associativity = 32;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_NO_ALLOCATE;
 
     const UINT32 max_sets = cacheSize / (lineSize * associativity);
@@ -28,10 +34,10 @@ namespace IL1
 
 namespace DL1
 {
-    // 1st level data cache: 32 kB, 32 B lines, 8-way associative
+    // 1st level data cache: 32 kB, 32 B lines, 32-way associative
     const UINT32 cacheSize = 32*KILO;
-    const UINT32 lineSize = 64;
-    const UINT32 associativity = 8;
+    const UINT32 lineSize = 32;
+    const UINT32 associativity = 32;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_NO_ALLOCATE;
 
     const UINT32 max_sets = cacheSize / (lineSize * associativity);
@@ -42,10 +48,10 @@ namespace DL1
 
 namespace UL2
 {
-    // 2nd level unified cache: 1 MB, 64 B lines, 
-    const UINT32 cacheSize = 1024*KILO;
+    // 2nd level unified cache: 2 MB, 64 B lines, direct mapped
+    const UINT32 cacheSize = 256*KILO;
     const UINT32 lineSize = 64;
-    const UINT32 associativity = 4;
+    const UINT32 associativity = 1;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_ALLOCATE;
 
     const UINT32 max_sets = cacheSize / (lineSize * associativity);
@@ -55,10 +61,10 @@ namespace UL2
 
 namespace UL3
 {
-    // 3rd level unified cache: 8 MB, 64 B lines
-    const UINT32 cacheSize = 8*MEGA;
+    // 3rd level unified cache: 2 MB, 64 B lines, direct mapped
+    const UINT32 cacheSize = 2*MEGA;
     const UINT32 lineSize = 64;
-    const UINT32 associativity = 16; 
+    const UINT32 associativity = 1;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_ALLOCATE;
 
     const UINT32 max_sets = cacheSize / (lineSize * associativity);

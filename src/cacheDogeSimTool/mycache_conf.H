@@ -1,7 +1,7 @@
 
-#include "mycache_conf_baseline.H"
-//#include "mycache_conf_skylake.H"
-//#include "mycache_conf_knightsLanding.H"
+#include "arch/mycache_conf_baseline.H"
+//#include "arch/mycache_conf_skylake.H"
+//#include "arch/mycache_conf_knightsLanding.H"
 
 typedef THREADID VIRTUALID;
 
