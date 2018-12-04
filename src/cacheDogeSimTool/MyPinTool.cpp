@@ -20,7 +20,7 @@ typedef UINT32 CACHE_STATS; // type of cache hit/miss counters
 
 #define CHECK_INTERVAL (3 * 10 * 1000) // in Millions of Inst
 // #define MTPKI (100)                      // Migration Threshold per K instructions
-#define INVALIDATION_RATIO_THRESHOLD (1.0/2.0)         // Precentage of Invalidations cause by a pair
+#define INVALIDATION_RATIO_THRESHOLD (1.0/5.0)         // Precentage of Invalidations cause by a pair
 
 
 // Other Vars
@@ -463,7 +463,8 @@ LOCALFUN VOID Fini(int code, VOID * v)
     }
     std::cerr << endl;
 
-    std::cerr << "Total Acces Delay Sum: " << humanize(total_delay) << " Cycles" << endl;
+    //std::cerr << "Total Acces Delay Sum: " << humanize(total_delay) << " Cycles" << endl;
+    std::cerr << "Total Acces Delay Sum: " << total_delay << " Cycles" << endl;
     std::cerr << "Total MPKI AVG: " << (total_miss * 1.0) / (exec_inst_access_sum/1000) << endl;
     std::cerr << "Total DPKA: " <<  exec_time_sum * 1.0 / exec_data_access_sum << endl;
     std::cerr << "Core Migrations is " << (CACHE_DOGE_ENABLED?"Enabled":"Disabled") << endl;
