@@ -117,7 +117,7 @@ class MyCache
         };
         
         // Level 2 Unified Cache        
-        UL2::CACHE* ul2[4] = {
+        UL2::CACHE* ul2[2] = {
             new UL2::CACHE("L2 Left  Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
             new UL2::CACHE("L2 Right Cache", UL2::cacheSize, UL2::lineSize, UL2::associativity),
         };
@@ -137,8 +137,7 @@ class MyCache
         }
         
         UL2::CACHE* getUL2(VIRTUALID id){
-            //return ul2[id/2]; -- changed by Nidhi because 4 L2 caches
-            return ul2[id]; 
+            return ul2[id/2]; 
         }
         
         UL3::CACHE* getUL3(VIRTUALID id){
