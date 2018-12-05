@@ -18,9 +18,9 @@ typedef UINT32 CACHE_STATS; // type of cache hit/miss counters
 
 
 
-#define CHECK_INTERVAL (3 * 10 * 1000) // in Millions of Inst
+#define CHECK_INTERVAL (10000) // in Millions of Inst
 // #define MTPKI (100)                      // Migration Threshold per K instructions
-#define INVALIDATION_RATIO_THRESHOLD (1.0/5.0)         // Precentage of Invalidations cause by a pair
+#define INVALIDATION_RATIO_THRESHOLD (0.333)         // Precentage of Invalidations cause by a pair
 
 
 // Other Vars

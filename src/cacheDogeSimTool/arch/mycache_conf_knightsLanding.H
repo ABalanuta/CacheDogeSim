@@ -83,7 +83,7 @@ namespace UL2
 namespace UL3
 {
     // 1st level data cache: 32 kB, 32 B lines, 8-way associative
-    const UINT32 cacheSize = 8*MEGA;
+    const UINT32 cacheSize = 1*GIGA;
     const UINT32 lineSize = 64;
     const UINT32 associativity = 16;
     const CACHE_ALLOC::STORE_ALLOCATION allocation = CACHE_ALLOC::STORE_ALLOCATE;
