@@ -5,4 +5,4 @@ docker run \
 	--name cachedoge \
 	--privileged \
 	-v "$(pwd)"/src:/root/src \
-	cachedoge/v1 /bin/bash
+	cachedoge/v3 /bin/bash

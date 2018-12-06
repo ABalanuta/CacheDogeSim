@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build . --rm -t cachedoge/v1
+docker build . --file Dockerfile --rm -t cachedoge/v3
