@@ -4,7 +4,7 @@ MAINTAINER "artur@cmu.edu"
 
 RUN	apt-get update && \
 	apt-get install -y --no-install-recommends \
-		htop nano aria2 build-essential m4 less libjpeg62 libxmu-dev && \
+		htop nano aria2 build-essential ca-certificates m4 less libjpeg62 libxmu-dev && \
 	rm -rf /var/lib/apt/lists/*
 
 ENV WORK_DIR /root
