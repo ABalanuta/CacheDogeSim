@@ -40,3 +40,4 @@ src/PinTools
 .vscode/c_cpp_properties.json
 .vscode/
 src/PARSEC/
+src/cacheDogeSimTool/parsecScripts/logs/

@@ -8,6 +8,7 @@
 #include <sstream>
 #include <numeric>
 #include <algorithm>
+#include <stdlib.h>
 
 #include "pin.H"
 
@@ -24,33 +25,33 @@ typedef UINT32 CACHE_STATS; // type of cache hit/miss counters
 
 // Other Vars
 MyCache cache;
-uint8_t thread_id_table[4] = {0, 1, 2, 3};
+uint8_t thread_id_table[4] = {0, 1, 2, 3};  // Randomized at start
 uint64_t exec_time[4];
 uint64_t exec_inst_access[4];
 uint64_t exec_data_access[4];
 
 uint64_t invalidation_table_l1[4][4];
 uint64_t invalidation_table_l1_sum[4][4];
+uint64_t invalidation_table_l1_mem[4][4];
 uint64_t core_migrations = 0;
 
 KNOB<bool> KnobMigrationEnabled(KNOB_MODE_WRITEONCE, "pintool", "mig",
-    "false", "Cache Migration Mechanism"); 
-
-KNOB<float> KnobMemoryRatio(KNOB_MODE_WRITEONCE, "pintool", "mt", 
-    "0.0", "The amount of memory to keep between each migration");
-
-KNOB<float> KnobInvalidationRatio(KNOB_MODE_WRITEONCE, "pintool", "irt", 
-    "0.333", "INVALIDATION_RATIO_THRESHOLD");
+    "false", "Cache Migration Mechanism");
 
 KNOB<unsigned int> KnobCheckInterval(KNOB_MODE_WRITEONCE, "pintool", "ci",
     "10000", "CHECK_INTERVAL");
 
+KNOB<float> KnobInvalidationRatio(KNOB_MODE_WRITEONCE, "pintool", "irt", 
+    "0.333", "INVALIDATION_RATIO_THRESHOLD");
+
+KNOB<float> KnobMemoryRatio(KNOB_MODE_WRITEONCE, "pintool", "mt", 
+    "0.0", "The amount of memory to keep between each migration");
 
 
 #define CACHE_DOGE_ENABLED (KnobMigrationEnabled)
 #define CHECK_INTERVAL (KnobCheckInterval) // in Millions of Inst
 #define INVALIDATION_RATIO_THRESHOLD (KnobInvalidationRatio)         // Precentage of Invalidations cause by a pair
-#define MIGRATION_MEMORY_THRESHOLD (KnobMemoryRatio)
+#define MIGRATION_MEMORY_ALIASING (KnobMemoryRatio)
 //        Dst|
 //___________| DstCore 0 | DstCore 1 | DstCore 2 | DstCore 3 |
 //SrcCore 0 |     X     |           |           |           |
@@ -124,69 +125,69 @@ bool check_conflicts()
     // score_board(invalidation_table_l1);
     // std::cerr << endl;
 
-    uint8_t random = sum % 2;
+    //uint8_t random = sum % 2;
         
     switch(i_max) {
 
         case 0: // <0-2>
             // We should migrate just one of the cores
             // Randomly decide which core to migrate
-            if (random){ // 0 migrates to 3
+            //if (random){ // 0 migrates to 3
                 cache.getDL1(0)->Flush(); // Clean Caches
                 cache.getDL1(3)->Flush();
                 std::swap(thread_id_table[0], thread_id_table[3]);
                 //printf("Migrating Cores 0 -> 3 \n");
-            }else{ // migrate 2 to 1
-                cache.getDL1(2)->Flush(); // Clean Caches
-                cache.getDL1(1)->Flush();
-                std::swap(thread_id_table[2], thread_id_table[1]);
-                // printf("Migrating Cores 2 -> 1 \n");
-            }
+            // }else{ // migrate 2 to 1
+            //     cache.getDL1(2)->Flush(); // Clean Caches
+            //     cache.getDL1(1)->Flush();
+            //     std::swap(thread_id_table[2], thread_id_table[1]);
+            //     // printf("Migrating Cores 2 -> 1 \n");
+            // }
             break;
 
         case 1: // <0-3>
             // Randomly decide which core to migrate
-            if (random){ // 0 migrates to 2
+            //if (random){ // 0 migrates to 2
                 cache.getDL1(0)->Flush(); // Clean Caches
                 cache.getDL1(2)->Flush();
                 std::swap(thread_id_table[0], thread_id_table[2]);
                 //printf("Migrating Cores 0 -> 2 \n");
-            }else{ // migrate 3 to 1
-                cache.getDL1(3)->Flush(); // Clean Caches
-                cache.getDL1(1)->Flush();
-                std::swap(thread_id_table[3], thread_id_table[1]);
-                //printf("Migrating Cores 3 -> 1 \n");
-            }
+            // }else{ // migrate 3 to 1
+            //     cache.getDL1(3)->Flush(); // Clean Caches
+            //     cache.getDL1(1)->Flush();
+            //     std::swap(thread_id_table[3], thread_id_table[1]);
+            //     //printf("Migrating Cores 3 -> 1 \n");
+            // }
             break;
         
         case 2: // <1-2>
             // Randomly decide which core to migrate
-            if (random){ // 1 migrates to 3
+            //if (random){ // 1 migrates to 3
                 cache.getDL1(1)->Flush(); // Clean Caches
                 cache.getDL1(3)->Flush();
                 std::swap(thread_id_table[1], thread_id_table[3]);
                 //printf("Migrating Cores 1 -> 3 \n");
-            }else{ // migrate 2 to 0
-                cache.getDL1(2)->Flush(); // Clean Caches
-                cache.getDL1(0)->Flush();
-                std::swap(thread_id_table[2], thread_id_table[0]);
-                //printf("Migrating Cores 2 -> 0 \n");
-            }
+            // }else{ // migrate 2 to 0
+            //     cache.getDL1(2)->Flush(); // Clean Caches
+            //     cache.getDL1(0)->Flush();
+            //     std::swap(thread_id_table[2], thread_id_table[0]);
+            //     //printf("Migrating Cores 2 -> 0 \n");
+            // }
             break;
         
         case 3: // <1-3>
             // Randomly decide which core to migrate
-            if (random){ // 1 migrates to 2
+            //if (random){ // 1 migrates to 2
                 cache.getDL1(1)->Flush(); // Clean Caches
                 cache.getDL1(2)->Flush();
                 std::swap(thread_id_table[1], thread_id_table[2]);
                 // printf("Migrating Cores 1 -> 2 \n");
-            }else{ // migrate 3 to 1
-                cache.getDL1(3)->Flush(); // Clean Caches
-                cache.getDL1(0)->Flush();
-                std::swap(thread_id_table[3], thread_id_table[0]);
-                //printf("Migrating Cores 3 -> 0 \n");
-            }
+            // }else{ // migrate 3 to 1
+            //     cache.getDL1(3)->Flush(); // Clean Caches
+            //     cache.getDL1(0)->Flush();
+            //     std::swap(thread_id_table[3], thread_id_table[0]);
+            //     //printf("Migrating Cores 3 -> 0 \n");
+            // }
             break;
     }
 
@@ -195,8 +196,14 @@ bool check_conflicts()
     // Heep history and reset counters
     for(int i = 0; i < 4; i++){
         for(int j = 0; j < 4; j++){
-            invalidation_table_l1_sum[i][j] += invalidation_table_l1[i][j];
-            invalidation_table_l1[i][j] = 0;
+            if(core_migrations == 0){
+                invalidation_table_l1_sum[i][j] = invalidation_table_l1[i][j];
+            }else {
+                invalidation_table_l1_sum[i][j] += 
+                        invalidation_table_l1[i][j] - invalidation_table_l1_mem[i][j];
+            }
+            invalidation_table_l1[i][j] *= MIGRATION_MEMORY_ALIASING;   // keep some memory ?
+            invalidation_table_l1_mem[i][j] = invalidation_table_l1[i][j]; // needed for correct sum values 
         }
     }
 
@@ -268,7 +275,8 @@ LOCALFUN VOID InsRef(ADDRINT addr, THREADID tid)
     if ( ! il1Hit) Ul2Access(addr, size, accessType, vid);
 
     // Check conclicts
-    if (accumulate(exec_inst_access, exec_inst_access+4, 0) % CHECK_INTERVAL == 0){
+    if (CACHE_DOGE_ENABLED & 
+        (accumulate(exec_inst_access, exec_inst_access+4, 0) % CHECK_INTERVAL == 0)){
         check_conflicts();
     }
 }
@@ -494,8 +502,25 @@ INT32 Usage()
     return -1;
 }
 
+void randomThreadAlloc(uint8_t tmp[4])
+{   
+    srand(time(0)); // set seed
+    tmp[0] = rand() % 4;
+    tmp[1] = rand() % 4;
+    tmp[2] = rand() % 4;
+    tmp[3] = rand() % 4;
+    
+    while (  tmp[1] == tmp[0]) tmp[1]  = rand() % 4;
+
+    while ( (tmp[2] == tmp[0]) | (tmp[2] == tmp[1]) ) tmp[2] = rand() % 4;
+    
+    while ( (tmp[3] == tmp[0]) | (tmp[3] == tmp[1]) | (tmp[3] == tmp[2]) ) tmp[3] = rand() % 4;
+
+}
+
 GLOBALFUN int main(int argc, char *argv[])
 {
+
     PIN_InitSymbols();
 
     if( PIN_Init(argc,argv) )
@@ -507,10 +532,13 @@ GLOBALFUN int main(int argc, char *argv[])
     INS_AddInstrumentFunction(Instruction, 0);
     PIN_AddFiniFunction(Fini, 0);
 
+    if (!CACHE_DOGE_ENABLED)    randomThreadAlloc(thread_id_table); // get random thread allocation
+
     std::cerr << "Core Migrations is " << (CACHE_DOGE_ENABLED?"Enabled":"Disabled") << endl;
     std::cerr << "Check Interval : " << CHECK_INTERVAL << endl;
     std::cerr << "Invalidation Ratio is : " << INVALIDATION_RATIO_THRESHOLD << endl;
-    std::cerr << "Migrations Memory Threshold is " << MIGRATION_MEMORY_THRESHOLD << endl;
+    std::cerr << "Migrations Memory Aliasing is " << MIGRATION_MEMORY_ALIASING << endl;
+    printf("Initial Core VID Config: [ %d %d %d %d ]\n", thread_id_table[0], thread_id_table[1], thread_id_table[2], thread_id_table[3]);
 
     // Never returns
     PIN_StartProgram();
