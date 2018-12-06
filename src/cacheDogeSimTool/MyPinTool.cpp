@@ -18,9 +18,8 @@ typedef UINT32 CACHE_STATS; // type of cache hit/miss counters
 
 
 
-#define CHECK_INTERVAL (10000) // in Millions of Inst
-// #define MTPKI (100)                      // Migration Threshold per K instructions
-#define INVALIDATION_RATIO_THRESHOLD (0.333)         // Precentage of Invalidations cause by a pair
+//#define CHECK_INTERVAL (10000) // in Millions of Inst
+//#define INVALIDATION_RATIO_THRESHOLD (0.333)         // Precentage of Invalidations cause by a pair
 
 
 // Other Vars
@@ -34,11 +33,24 @@ uint64_t invalidation_table_l1[4][4];
 uint64_t invalidation_table_l1_sum[4][4];
 uint64_t core_migrations = 0;
 
-KNOB<bool> KnobMigrationEnabled(KNOB_MODE_WRITEONCE, "pintool", "migrates", "false",
-    "Cache Migration Mechanism");
+KNOB<bool> KnobMigrationEnabled(KNOB_MODE_WRITEONCE, "pintool", "mig",
+    "false", "Cache Migration Mechanism"); 
 
-#define CACHE_DOGE_ENABLED KnobMigrationEnabled
+KNOB<float> KnobMemoryRatio(KNOB_MODE_WRITEONCE, "pintool", "mt", 
+    "0.0", "The amount of memory to keep between each migration");
 
+KNOB<float> KnobInvalidationRatio(KNOB_MODE_WRITEONCE, "pintool", "irt", 
+    "0.333", "INVALIDATION_RATIO_THRESHOLD");
+
+KNOB<unsigned int> KnobCheckInterval(KNOB_MODE_WRITEONCE, "pintool", "ci",
+    "10000", "CHECK_INTERVAL");
+
+
+
+#define CACHE_DOGE_ENABLED (KnobMigrationEnabled)
+#define CHECK_INTERVAL (KnobCheckInterval) // in Millions of Inst
+#define INVALIDATION_RATIO_THRESHOLD (KnobInvalidationRatio)         // Precentage of Invalidations cause by a pair
+#define MIGRATION_MEMORY_THRESHOLD (KnobMemoryRatio)
 //        Dst|
 //___________| DstCore 0 | DstCore 1 | DstCore 2 | DstCore 3 |
 //SrcCore 0 |     X     |           |           |           |
@@ -496,6 +508,9 @@ GLOBALFUN int main(int argc, char *argv[])
     PIN_AddFiniFunction(Fini, 0);
 
     std::cerr << "Core Migrations is " << (CACHE_DOGE_ENABLED?"Enabled":"Disabled") << endl;
+    std::cerr << "Check Interval : " << CHECK_INTERVAL << endl;
+    std::cerr << "Invalidation Ratio is : " << INVALIDATION_RATIO_THRESHOLD << endl;
+    std::cerr << "Migrations Memory Threshold is " << MIGRATION_MEMORY_THRESHOLD << endl;
 
     // Never returns
     PIN_StartProgram();
