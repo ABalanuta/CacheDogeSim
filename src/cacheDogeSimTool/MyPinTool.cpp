@@ -79,7 +79,7 @@ bool check_conflicts()
         return false;
     }
 
-    uint64_t triangle[4][4] = {0};
+    const uint64_t triangle[4][4] = {0};
 
     //        Dst|
     //___________| DstCore 0 | DstCore 1 | DstCore 2 | DstCore 3 |
@@ -100,14 +100,14 @@ bool check_conflicts()
     // score_board(triangle);
     // std::cerr << endl;
 
-    uint64_t sum =  triangle[0][1] + triangle[0][2] + triangle[0][3] + \
-                    triangle[1][2] + triangle[1][3] + triangle[2][3];
+    const uint64_t sum =    triangle[0][1] + triangle[0][2] + triangle[0][3] + \
+                            triangle[1][2] + triangle[1][3] + triangle[2][3];
     //printf("Sum %s\n", humanize(sum).c_str());
 
     // Important Ones
     // Core <0-2> <0-3> <1-2> <1-3>
-    uint64_t migration_candidates[4] = {    triangle[0][2], triangle[0][3], \
-                                            triangle[1][2], triangle[1][3] };
+   const uint64_t migration_candidates[4] = {   triangle[0][2], triangle[0][3], \
+                                                triangle[1][2], triangle[1][3] };
 
     uint8_t i_max = 0;
     for (int i = 0; i<4; i++){
@@ -344,7 +344,7 @@ LOCALFUN VOID Ul2Access(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE acces
 LOCALFUN VOID Ul3Access(ADDRINT addr, UINT32 size, CACHE_BASE::ACCESS_TYPE accessType, VIRTUALID vid)
 {
     // Update Counters
-    exec_time[vid] += L3_CACHE_LATENCY; // Adds L1 cache latency
+    exec_time[vid] += L3_CACHE_LATENCY; // Adds L3 cache latency
 
     // third level cache
     const BOOL ul3Hit = cache.getUL3(vid)->Access(addr, size, accessType);
