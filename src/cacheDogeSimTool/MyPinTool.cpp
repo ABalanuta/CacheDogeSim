@@ -79,7 +79,7 @@ bool check_conflicts()
         return false;
     }
 
-    const uint64_t triangle[4][4] = {0};
+    uint64_t triangle[4][4] = {0};
 
     //        Dst|
     //___________| DstCore 0 | DstCore 1 | DstCore 2 | DstCore 3 |
