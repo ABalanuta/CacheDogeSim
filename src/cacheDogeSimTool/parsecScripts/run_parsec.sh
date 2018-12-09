@@ -39,7 +39,7 @@ DATE=$(date "+%HH_%MM_%Ss__%d.%m.%Y")
 ALGO="alg2"
 
 #Compile Tool
-cd ..; ./compile.sh 2>&1 >> /dev/null; cd $HERE
+#cd ..; ./compile.sh 2>&1 >> /dev/null; cd $HERE
 
 # Set Parsec Env
 cd $PARSEC_DIR; source env.sh; cd $HERE
