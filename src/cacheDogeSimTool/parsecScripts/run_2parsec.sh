@@ -82,3 +82,21 @@ do
     done
 
 done
+
+exit
+
+
+cat *Baseline* | grep "Total Acces" | awk '{sum += $5} END {printf "Baseline Average %.2f\n", sum/10}'
+for filename in *_CacheDoge*
+do
+    echo -n $filename | awk -F '_' '{printf $5 "\t"}'
+    cat $filename | grep "Total Acces" | awk '{sum += $5} END {printf "%.2f\n", sum/10}'
+done
+
+
+cat *Baseline* | grep "Total MPKI" | awk '{sum += $4} END {printf "Baseline Average %.2f\n", sum/10}'
+for filename in *_CacheDoge*
+do
+    echo -n $filename | awk -F '_' '{printf $6 "\t"}'
+    cat $filename | grep "Total MPKI" | awk '{sum += $4} END {printf "%.2f\n", sum/10}'
+done

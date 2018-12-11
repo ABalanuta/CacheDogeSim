@@ -2,7 +2,7 @@
 
 #- blackscholes (apps)
 #- bodytrack (apps)
-#- facesim (apps)
+#- facesim (apps) // ignore this one
 #- ferret (apps)
 #- freqmine (apps)
 #- raytrace (apps)
@@ -44,7 +44,7 @@ ALGO="alg2"
 # Set Parsec Env
 cd $PARSEC_DIR; source env.sh; cd $HERE
 
-ROUNDS=1
+ROUNDS=10
 #MIG=''              # Migrate Cores (use "-mig" if yes nothing otherwise)
 CI='1000'           # Check Interval
 #IRT='0.333'         # Invalidation Ratio Treshold
@@ -81,4 +81,22 @@ do
         echo "#########################################################################" | tee -a $LOG_FILE
     done
 
+done
+
+
+exit
+
+cat *Baseline* | grep "Total Acces" | awk '{sum += $5} END {printf "Baseline Average %.2f\n", sum/10}'
+for filename in *_CacheDoge*
+do
+    echo -n $filename | awk -F '_' '{printf $6 "\t"}'
+    cat $filename | grep "Total Acces" | awk '{sum += $5} END {printf "%.2f\n", sum/10}'
+done
+
+
+cat *Baseline* | grep "Total MPKI" | awk '{sum += $4} END {printf "Baseline Average %.2f\n", sum/10}'
+for filename in *_CacheDoge*
+do
+    echo -n $filename | awk -F '_' '{printf $6 "\t"}'
+    cat $filename | grep "Total MPKI" | awk '{sum += $4} END {printf "%.2f\n", sum/10}'
 done
